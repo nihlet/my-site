@@ -7,8 +7,8 @@ import           Text.Pandoc.Options
 import           Lab2
 --------------------------------------------------------------------------------
 main :: IO ()
-main = do 
-    plotAmplitudeSpectre1 
+main = do  
+    lab2
     hakyll $ do
         match "images/*" $ do
             route   idRoute

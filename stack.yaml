@@ -17,8 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver:
-  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/12/12.yaml
+resolver: lts-12.26
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -39,15 +38,9 @@ packages:
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
 extra-deps:
-- Chart-diagrams-1.9
-- Chart-1.9@sha256:f41568b6b3704f66c2ec163295b430ab7d798f91de426c2d5aba747d1135cd9b,2855
-- SVGFonts-1.6.0.3@sha256:54b9f889a4fb8876c3192215aff2ccd2eb8ad2b4731f63caa8f20ab6115f6bb5,3696
-- diagrams-core-1.4.1.1@sha256:4554e4cf26051c63c6663612103df7f363e2f4709fe45c503781a34e8f58c061,2985
-- diagrams-lib-1.4.2.3@sha256:3d2ce6c2ad627b0ded8631da0fc49cfd54907c4c1301685f2a6f9a99551d89e4,7904
-- diagrams-postscript-1.4.1@sha256:219fe62639e23659ac5bb13c76fb2713ff1d5cd1091b4ca9e97b64cfe981197c,2443
-- diagrams-svg-1.4.2@sha256:cdf28cbebb66ac9131ec461128fb193663a72313f86aa8ecd98101bf5d7362d5,3183
-- diagrams-solve-0.1.1@sha256:8e166f5412e88fe290b16c1926b6729cfe571902df0e7eceab23bb5725e8f7fd,1671
-- dual-tree-0.2.2@sha256:d800e3b4185109422f04344c5fc784379a4c432828a1a6c11248093d648472c2,2903
+- Chart-1.9@sha256:f41568b6b3704f66c2ec163295b430ab7d798f91de426c2d5aba747d1135cd9b
+- Chart-diagrams-1.9@sha256:cdd0c22d730e507f9644e690833096ee127302b5ff5e1571f6def419160a2642
+- SVGFonts-1.6.0.3@sha256:54b9f889a4fb8876c3192215aff2ccd2eb8ad2b4731f63caa8f20ab6115f6bb5
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

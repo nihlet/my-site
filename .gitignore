@@ -17,3 +17,6 @@ tests/Main
 _cache
 _store
 _site
+
+# Ignore SVG
+*.svg

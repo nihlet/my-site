@@ -1,117 +1,167 @@
 module Lab2
-  ( plotSignal
-  , plotDiscrets1
-  , plotDiscrets2
-  , plotDiscrets3
-  , plotAmplitudeSpectre1
-  , plotAmplitudeSpectre2
-  , plotAmplitudeSpectre3
-  , plotPhaseSpectre1
-  , plotPhaseSpectre2
-  , plotPhaseSpectre3
-  , plotRestoredSignal1
-  , plotRestoredSignal2
-  , plotRestoredSignal3
-  ) where
+  (lab2) where
 
 import Graphics.Rendering.Chart.Backend.Diagrams
-import Graphics.Rendering.Chart.Easy hiding (indices)
+import Graphics.Rendering.Chart.Easy             hiding (indices)
 
 import Data.Array
 import Data.Complex
 import Numeric.Transform.Fourier.FFT
 
 -- Константы согласно заданию
+f0 :: Double
 f0 = 1400
 
+k :: [Double]
 k = [0.2, 1.6, 8.0]
 
+m :: [Int]
 m = [2, 5, 12]
 
-n = 1024.0
+n = 1024
 
+periods :: Double
 periods = 10
 
 period :: Double
 period = 1 / f0
 
--- signal t
---   | t > periods * period = 0
-signal :: Double -> Double
-signal t = (-1) ^^ i
+function :: Double -> Double
+function t = fromInteger $ (-1) ^ i
   where
     i = floor (t * f0 * 2)
 
-plotSignal =
-  toFile def "signal.svg" $ do
-    layout_title .= "Signal"
+lab2 :: IO () 
+lab2 = do
+  plotOriginal
+  plotOriginalAmpSpectrum
+  plotOriginalPhaseSpectrum
+  plotUndersampling1
+  plotUndersamplingAmpSpectrum1
+  plotUndersamplingPhaseSpectrum1
+  plotUndersampling2
+  plotUndersamplingAmpSpectrum2
+  plotUndersamplingPhaseSpectrum2
+  plotOversampling
+  plotOversamplingAmpSpectrum
+  plotOversamplingPhaseSpectrum
+
+
+ampSpectrum signal = map magnitude $ elems $ rfft $ listArray (0, n-1) signal where
+  n = length signal
+
+phaseSpectrum signal = map phase $ elems $ rfft $ listArray (0, n-1) signal where
+    n = length signal
+
+-- Original signal
+plotOriginal =
+  toFile def "posts/Lab2/Original_signal.svg" $do
+    layout_title .= "Original signal"
     setColors [opaque blue]
-    let discrets = [0.0,1 / (100 * f0) .. (periods * 2) / f0]
-    plot (line "" [zip discrets (map signal discrets)])
+    plot (line "" [zip discrets signal]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      signal = map function discrets
+      fd = n / (periods * period)
 
-plotDiscrets filename k =
-  toFile def filename $ do
-    layout_title .= ("fd = " ++ show k ++ " * f0")
-    setColors [opaque blue, opaque red]
-    let discrets = [0.0,1 / (k * f0) .. (periods * 2) / f0]
-    plot (line "" [zip discrets (map signal discrets)])
-    plot (points "" $zip discrets (map signal discrets))
-
-plotDiscrets1 = plotDiscrets "discretSignal1.svg" (head k)
-
-plotDiscrets2 = plotDiscrets "discretSignal2.svg" (k !! 1)
-
-plotDiscrets3 = plotDiscrets "discretSignal3.svg" (k !! 2)
-
-spectrum k = rfft s
-  where
-    s =
-      listArray (0, floor n - 1) $
-      map signal [0.0,1 / (k * f0) .. (n - 1) / (k * f0)]
-
-plotAmplitudeSpectre filename k =
-  toFile def filename $ do
-    layout_title .= ("spectrum fd = " ++ show k ++ " * f0 ")
+plotOriginalAmpSpectrum = 
+  toFile def "posts/Lab2/Original_spectrum.svg" $do
+    layout_title .= "Original spectrum"
     setColors [opaque blue]
-    let spect = map magnitude $elems $spectrum k :: [Double]
-    let indx = indices $spectrum k :: [Int]
-    plot (line "" [zip indx spect])
+    plot (line "" [zip discrets spectrum]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      spectrum = ampSpectrum $ map function discrets
+      fd = n / (periods * period)
 
-plotPhaseSpectre filename k =
-  toFile def filename $ do
-    layout_title .= ("phase spectrum fd = " ++ show k ++ " * f0 ")
+plotOriginalPhaseSpectrum = 
+  toFile def "posts/Lab2/Original_phase_spectrum.svg" $do
+    layout_title .= "Original phase spectrum"
     setColors [opaque blue]
-    let spect = map phase $elems $spectrum k :: [Double]
-    let indx = indices $spectrum k :: [Int]
-    plot (line "" [zip indx spect])
+    plot (line "" [zip discrets spectrum]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      spectrum = phaseSpectrum $ map function discrets
+      fd = n / (periods * period)
 
-restoredSignal k n = irfft modifiedSpectrum
-  where
-    modifiedSpectrum =
-      spectrum k // [(i, 0 :+ 0) | i <- [n + 1 .. end - begin - n]]
-    (begin, end) = bounds $ spectrum k
-
-plotRestoredSignal filename k n =
-  toFile def filename $ do
-    layout_title .= ("restored signal fd = " ++ show k ++ " * f0 ")
+-- Undersampling signal
+plotUndersampling1 =
+  toFile def "posts/Lab2/undersamling_signal1.svg" $do
+    layout_title .= "Undersampling signal, k = 0.2"
     setColors [opaque blue]
-    let discrets = [0.0,1 / (k * f0) .. (periods * 2) / f0]
-    plot (line "" [zip discrets $ elems $ restoredSignal k n])
+    plot (line "" [zip discrets signal]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      signal = map function discrets
+      fd = f0 * head k
 
-plotAmplitudeSpectre1 = plotAmplitudeSpectre "spectrum1.svg" (head k)
+plotUndersamplingAmpSpectrum1 = 
+  toFile def "posts/Lab2/undersamling_spectrum1.svg" $do
+    layout_title .= "Undersampling specrtum, k = 0.2"
+    setColors [opaque blue]
+    plot (line "" [zip discrets spectrum]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      spectrum = ampSpectrum $ map function discrets
+      fd = f0 * head k
 
-plotPhaseSpectre1 = plotPhaseSpectre "phasespectrum1.svg" (head k)
+plotUndersamplingPhaseSpectrum1 = 
+  toFile def "posts/Lab2/undersamling_phase_spectrum1.svg" $do
+    layout_title .= "Undersampling phase specrtum, k = 0.2"
+    setColors [opaque blue]
+    plot (line "" [zip discrets spectrum]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      spectrum = phaseSpectrum $ map function discrets
+      fd = f0 * head k
 
-plotAmplitudeSpectre2 = plotAmplitudeSpectre "spectrum2.svg" (k !! 1)
+-- Undersampling signal 2
+plotUndersampling2 =
+  toFile def "posts/Lab2/undersamling_signal2.svg" $do
+    layout_title .= "Undersampling signal, k = 1.6"
+    setColors [opaque blue]
+    plot (line "" [zip discrets signal]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      signal = map function discrets
+      fd = f0 * k!!1
 
-plotPhaseSpectre2 = plotPhaseSpectre "phasespectrum2.svg" (k !! 1)
+plotUndersamplingAmpSpectrum2 = 
+  toFile def "posts/Lab2/undersamling_spectrum2.svg" $do
+    layout_title .= "Undersampling specrtum, k = 1.6"
+    setColors [opaque blue]
+    plot (line "" [zip discrets spectrum]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      spectrum = ampSpectrum $ map function discrets
+      fd = f0 * k!!1
 
-plotAmplitudeSpectre3 = plotAmplitudeSpectre "spectrum3.svg" (k !! 2)
+plotUndersamplingPhaseSpectrum2 = 
+  toFile def "posts/Lab2/undersamling_phase_spectrum2.svg" $do
+    layout_title .= "Undersampling phase specrtum, k = 1.6"
+    setColors [opaque blue]
+    plot (line "" [zip discrets spectrum]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      spectrum = phaseSpectrum $ map function discrets
+      fd = f0 * k!!1
 
-plotPhaseSpectre3 = plotPhaseSpectre "phasespectrum3.svg" (k !! 2)
+-- Oversampling signal
+plotOversampling =
+  toFile def "posts/Lab2/oversamling_signal2.svg" $do
+    layout_title .= "Oversampling signal, k = 1.6"
+    setColors [opaque blue]
+    plot (line "" [zip discrets signal]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      signal = map function discrets
+      fd = f0 * k!!2
 
-plotRestoredSignal1 = plotRestoredSignal "restoredsignal1.svg" (k !! 2) (head m)
+plotOversamplingAmpSpectrum = 
+  toFile def "posts/Lab2/oversamling_spectrum2.svg" $do
+    layout_title .= "Oversampling specrtum, k = 1.6"
+    setColors [opaque blue]
+    plot (line "" [zip discrets spectrum]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      spectrum = ampSpectrum $ map function discrets
+      fd = f0 * k!!2
 
-plotRestoredSignal2 = plotRestoredSignal "restoredsignal2.svg" (k !! 2) (m !! 1)
-
-plotRestoredSignal3 = plotRestoredSignal "restoredsignal3.svg" (k !! 2) (m !! 2)
+plotOversamplingPhaseSpectrum = 
+  toFile def "posts/Lab2/oversamling_phase_spectrum2.svg" $do
+    layout_title .= "Oversampling phase specrtum, k = 1.6"
+    setColors [opaque blue]
+    plot (line "" [zip discrets spectrum]) where
+      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      spectrum = phaseSpectrum $ map function discrets
+      fd = f0 * k!!2
+    
