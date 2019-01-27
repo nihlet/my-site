@@ -14,9 +14,17 @@ main = do
             route   idRoute
             compile copyFileCompiler
 
+        match "posts/**.svg" $ do
+            route   idRoute
+            compile copyFileCompiler
+
         match "css/*" $ do
             route   idRoute
             compile compressCssCompiler
+            
+        match "third-party/**" $ do
+            route   idRoute
+            compile copyFileCompiler
 
         match (fromList ["about.rst", "contact.markdown"]) $ do
             route   $ setExtension "html"

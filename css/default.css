@@ -45,6 +45,16 @@ article .header {
   color: #555;
 }
 
+img {
+  display: block;
+  margin: auto;
+}
+
+figcaption {
+  font-style: italic;
+  text-align: center;
+}
+
 .logo a {
   font-weight: bold;
   color: #000;
@@ -111,7 +121,7 @@ article .header {
 
 @media (min-width: 640px) {
   body {
-    width: 60rem;
+    width: 86rem;
     margin: 0 auto;
     padding: 0;
   }
