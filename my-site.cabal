@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.30.0.
+-- This file has been generated from package.yaml by hpack version 0.31.1.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: af2866692085a7163e647fd1e2220dfe3f4b25380243e14e725442a7996b1320
+-- hash: b65196bbde09e5b3e9ac363f30a3949ebffe49d8f5841e1e80c559c87ba56ad8
 
 name:           my-site
 version:        0.1.0.0
@@ -14,10 +14,12 @@ build-type:     Simple
 library
   exposed-modules:
       Lab2
+      Lab3
   other-modules:
       Paths_my_site
   hs-source-dirs:
       posts/Lab2
+      posts/Lab3
   build-depends:
       Chart
     , Chart-diagrams
