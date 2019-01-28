@@ -10,7 +10,7 @@ import Numeric.Transform.Fourier.FFT
 
 -- Вспомогательные величины
 fopt :: FileOptions
-fopt = def{_fo_size=(600,400)}
+fopt = def{_fo_size=(600,200)}
 
 -- Константы согласно заданию
 f0 :: Double

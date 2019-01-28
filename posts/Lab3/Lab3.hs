@@ -10,10 +10,10 @@ import Numeric.Transform.Fourier.FFT
 
 -- Вспомогательные величины
 fopt :: FileOptions
-fopt = def{_fo_size=(600,400)}
+fopt = def{_fo_size=(600,200)}
 
 -- Константы согласно заданию
-n = 1024
+n = 256
 
 harmonics :: [Int]
 harmonics = [0 .. floor (n/2)] 
@@ -21,10 +21,9 @@ harmonics = [0 .. floor (n/2)]
 function :: Double -> Double
 function t = 5 * cos (3 * t) - 7 * sin (7 * t) + 4 * cos (11 * t)
 
--- todo: frequency and cyclic freq 
-maxFreq = 22.0
+maxFreq = 11 / (2 * pi)
 
-k = [0.7, 1.0, 2.3]
+k = [0.7, 1.0, 4]
 
 lab3 :: IO () 
 lab3 = do
@@ -47,51 +46,36 @@ ampSpectrum signal = map magnitude $ elems $ rfft $ listArray (0, n-1) signal wh
 phaseSpectrum signal = map phase $ elems $ rfft $ listArray (0, n-1) signal where
     n = length signal
 
--- signalFromHarmonics k signal = map ((*2) . realPart) $ elems $ ifft harmonics where
---   spectrum = rfft $ listArray (0, n-1) signal
---   harmonics = listArray (0, n-1) $ take k (elems spectrum) ++ replicate (n - k) (0.0 :+ 0.0)
---   n = length signal
-
--- calculateError s1 s2 = sqrt $ (/n) $ sum $ map (^^2) $ zipWith (-) s1 s2 where 
---   n = fromIntegral $ length s1
-
--- findMaxHarmonic01 :: [Double] -> Int
--- findMaxHarmonic01 = helper 0 where
---   helper h s1 = 
---     if calculateError s1 s2 < 0.1
---     then h
---     else helper (h+1) s1
---     where s2 = signalFromHarmonics h s1
 
 -- Undersampling signal 
 plotUndersampling =
   toFile fopt "posts/Lab3/undersamling_signal.svg" $do
     setColors [opaque blue]
     plot (line "" [zip discrets signal]) where
-      discrets = [0.0, 1.0/fd .. (n-1)/fd]
+      discrets = [0.0, 1.0 /fd .. (n-1)/fd]
       signal = map function discrets
       fd = maxFreq * head k
 
+      
 plotUndersamplingAmpSpectrum = 
   toFile fopt "posts/Lab3/undersamling_spectrum.svg" $do
     setColors [opaque blue]
     plot (line "" [zip harmonics spectrum]) where
       discrets = [0.0, 1.0/fd .. (n-1)/fd]
-      spectrum = map (/n) $ ampSpectrum $ map function discrets
+      spectrum = map (* (2 / n)) $ ampSpectrum $ map function discrets
       fd = maxFreq * head k
-      harmonics = [0.0, 1.0 / period .. (n-1) / period]
-      period = n / fd
+      harmonics = [0.0, 1.0 * cyclicFreq .. n / 2 * cyclicFreq]
+      cyclicFreq =  2 * pi * fd / n 
 
 plotUndersamplingPhaseSpectrum = 
   toFile fopt "posts/Lab3/undersamling_phase_spectrum.svg" $do
     setColors [opaque blue]
     plot (line "" [zip harmonics spectrum]) where
       discrets = [0.0, 1.0/fd .. (n-1)/fd]
-      spectrum = map (/n) $ phaseSpectrum $ map function discrets
+      spectrum = phaseSpectrum $ map function discrets
       fd = maxFreq * head k
-      harmonics = [0.0, 1.0 / period .. (n-1) / period]
-      period = n / fd
-
+      harmonics = [0.0, 1.0 * cyclicFreq .. n / 2 * cyclicFreq]
+      cyclicFreq =  2 * pi * fd / n 
 
 -- Normal signal 
 plotNormal =
@@ -107,21 +91,20 @@ plotNormalAmpSpectrum =
     setColors [opaque blue]
     plot (line "" [zip harmonics spectrum]) where
       discrets = [0.0, 1.0/fd .. (n-1)/fd]
-      spectrum = map (/n) $ ampSpectrum $ map function discrets
+      spectrum = map (* (2 / n)) $ ampSpectrum $ map function discrets
       fd = maxFreq * k !! 1
-      harmonics = [0.0, 1.0 / period .. (n-1) / period]
-      period = n / fd
-
+      harmonics = [0.0, 1.0 * cyclicFreq .. n / 2 * cyclicFreq]
+      cyclicFreq =  2 * pi * fd / n 
+      
 plotNormalPhaseSpectrum = 
   toFile fopt "posts/Lab3/normal_phase_spectrum.svg" $do
     setColors [opaque blue]
     plot (line "" [zip harmonics spectrum]) where
       discrets = [0.0, 1.0/fd .. (n-1)/fd]
-      spectrum = map (/n) $ phaseSpectrum $ map function discrets
+      spectrum = phaseSpectrum $ map function discrets
       fd = maxFreq * k !! 1
-      harmonics = [0.0, 1.0 / period .. (n-1) / period]
-      period = n / fd
-
+      harmonics = [0.0, 1.0 * cyclicFreq .. n / 2 * cyclicFreq]
+      cyclicFreq =  2 * pi * fd / n 
 
 -- Oversampling signal 
 plotOversampling =
@@ -137,19 +120,18 @@ plotOversamplingAmpSpectrum =
     setColors [opaque blue]
     plot (line "" [zip harmonics spectrum]) where
       discrets = [0.0, 1.0/fd .. (n-1)/fd]
-      spectrum = map (/n) $ ampSpectrum $ map function discrets
+      spectrum = map (* (2 / n)) $ ampSpectrum $ map function discrets
       fd = maxFreq * k !! 2
-      harmonics = [0.0, 1.0 / period .. (n-1) / period]
-      period = n / fd
+      harmonics = [0.0, 1.0 * cyclicFreq .. n / 2 * cyclicFreq]
+      cyclicFreq =  2 * pi * fd / n 
 
 plotOversamplingPhaseSpectrum = 
   toFile fopt "posts/Lab3/oversamling_phase_spectrum.svg" $do
     setColors [opaque blue]
     plot (line "" [zip harmonics spectrum]) where
       discrets = [0.0, 1.0/fd .. (n-1)/fd]
-      spectrum = map (/n) $ phaseSpectrum $ map function discrets
+      spectrum = phaseSpectrum $ map function discrets
       fd = maxFreq * k !! 2
-      harmonics = [0.0, 1.0 / period .. (n-1) / period]
-      period = n / fd
-
+      harmonics = [0.0, 1.0 * cyclicFreq .. n / 2 * cyclicFreq]
+      cyclicFreq =  2 * pi * fd / n 
     
