@@ -18,6 +18,7 @@ library:
   source-dirs: 
     - posts/Lab2
     - posts/Lab3
+    - posts/Lab4
   dependencies:
     - lens
     - Chart

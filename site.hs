@@ -6,11 +6,13 @@ import qualified Data.Set as S
 import           Text.Pandoc.Options
 import           Lab2
 import           Lab3
+import           Lab4
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do  
     lab2
     lab3
+    lab4
     hakyll $ do
         match "images/*" $ do
             route   idRoute
