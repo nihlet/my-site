@@ -10,8 +10,8 @@ import           Lab4
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do  
-    lab2
-    lab3
+    -- lab2
+    -- lab3
     lab4
     hakyll $ do
         match "images/*" $ do
