@@ -34,6 +34,10 @@ lab4 = do
   plotSpectrum
   plotSpectrumDecimated
   plotSpectrumBetterResolution
+  plotPrepForInterpSignal
+  plotPrepForInterpSpectrum
+  plotPrepForInterpSpectrum2
+  plotSignalInterpolated
 
 ampSpectrum signal = map magnitude $ elems $ rfft $ listArray (0, n-1) signal where
   n = length signal
@@ -41,12 +45,17 @@ ampSpectrum signal = map magnitude $ elems $ rfft $ listArray (0, n-1) signal wh
 phaseSpectrum signal = map phase $ elems $ rfft $ listArray (0, n-1) signal where
   n = length signal
 
+signalFromHarmonics k signal = map ((*2) . realPart) $ elems $ ifft harmonics where
+  spectrum = rfft $ listArray (0, n-1) signal
+  harmonics = listArray (0, n-1) $ take k (elems spectrum) ++ replicate (n - k) (0.0 :+ 0.0)
+  n = length signal
+
+discrets = [0.0, 1.0 /fd .. tau]
 
 plotSignal =
   toFile fopt "posts/Lab4/signal.svg" $do
     setColors [opaque blue]
     plot (line "" [zip discrets signal]) where
-      discrets = [0.0, 1.0 /fd .. tau]
       signal = map function discrets
 
 plotSignalZoomed =
@@ -54,17 +63,16 @@ plotSignalZoomed =
     layout_x_axis . laxis_generate .= scaledAxis def (0,60/fd)
     setColors [opaque blue]
     plot (line "" [zip discrets signal]) where
-      discrets = [0.0, 1.0 /fd .. tau]
       signal = map function discrets
 
 plotSpectrum =
   toFile fopt "posts/Lab4/spectrum.svg" $do
-    layout_x_axis . laxis_generate .= scaledAxis def (0,1.1*f0)
+    layout_x_axis . laxis_generate .= scaledAxis def (0.9*f0,1.1*f0)
     setColors [opaque blue]
     plot (line "" [zip harmonics spectrum]) where
       discrets = init [0.0, 1.0 /fd .. tau]
       spectrum = map (* (2 / n)) $ ampSpectrum $ map function discrets
-      harmonics = [0.0, 1.0 .. n]
+      harmonics = [0.0, 1.0/tau .. n]
 
 plotSpectrumDecimated =
   toFile fopt "posts/Lab4/spectrumDecimated.svg" $do
@@ -74,18 +82,61 @@ plotSpectrumDecimated =
       fd' = fd / 16.0
       discrets = init [0.0, 1.0 /fd' .. tau]
       spectrum = map (* (2 / n)) $ ampSpectrum $ map function discrets
-      harmonics = [0.0, 1.0 .. n]
+      harmonics = [0.0, 1.0/tau .. n]
 
--- todo: перевести гармоники в частоты
 plotSpectrumBetterResolution =
   toFile fopt "posts/Lab4/spectrumBetterResolution.svg" $do
-    layout_x_axis . laxis_generate .= scaledAxis def (0,1.1*f0)
+    layout_x_axis . laxis_generate .= scaledAxis def (0.9*f0,1.1*f0)
     setColors [opaque blue]
     plot (line "" [zip harmonics spectrum]) where
-      discrets = init [0.0, 1.0 /fd .. tau]
+      discrets = init [0.0, 1.0 / fd .. tau]
       spectrum = map (* (2 / n)) $ ampSpectrum signal
-      harmonics = [0.0, 1.0 .. 4 * n]
+      harmonics = [0.0, 1/(4.0 * tau) .. 4 * n]
       signal = map function discrets ++ replicate (3 * floor n) 0.0
 
 
-      
+plotPrepForInterpSignal =
+  toFile fopt "posts/Lab4/prepForInterpSignal.svg" $do
+    layout_x_axis . laxis_generate .= scaledAxis def (0,60/fd)
+    setColors [opaque blue]
+    plot (line "" [zip discrets' signal']) where
+      signal = map function discrets
+      discrets' = [0.0, 1.0/(fd * fromIntegral l) .. tau] 
+      signal' = concatMap (\x -> x : replicate (l-1) 0.0) signal
+
+plotPrepForInterpSpectrum =
+  toFile fopt "posts/Lab4/prepForInterpSpectrum.svg" $do
+    layout_x_axis . laxis_generate .= scaledAxis def (0,2*f0)
+    setColors [opaque blue]
+    plot (line "" [zip harmonics spectrum]) where
+      signal = map function discrets
+      discrets' = [0.0, 1.0/(fd * fromIntegral l) .. tau] 
+      signal' = concatMap (\x -> x : replicate (l-1) 0.0) signal
+      spectrum = map (* (2 / n)) $ ampSpectrum signal'
+      harmonics = [0.0, 1/tau .. fromIntegral l * n]
+
+plotPrepForInterpSpectrum2 =
+  toFile fopt "posts/Lab4/prepForInterpSpectrum2.svg" $do
+    layout_x_axis . laxis_generate .= scaledAxis def (0,2*f0)
+    setColors [opaque blue]
+    plot (line "" [zip harmonics spectrum']) where
+      signal = map function discrets
+      discrets' = [0.0, 1.0/(fd * fromIntegral l) .. tau] 
+      signal' = concatMap (\x -> x : replicate (l-1) 0.0) signal
+      spectrum = map (* (2 / n)) $ ampSpectrum signal'
+      spectrum' = take k spectrum ++ replicate (length spectrum - k) 0.0
+      k = floor (1.1*f0 / (1/tau))
+      harmonics = [0.0, 1/tau .. fromIntegral l * n]
+
+plotSignalInterpolated =
+  toFile fopt "posts/Lab4/signalInterpolated.svg" $do
+    layout_x_axis . laxis_generate .= scaledAxis def (0,60.0/fd)
+    setColors [opaque blue]
+    plot (line "" [zip discrets' signal'']) where
+      signal = map function discrets
+      discrets' = [0.0, 1.0/(fd * fromIntegral l) .. tau] 
+      signal' = concatMap (\x -> x : replicate (l-1) 0.0) signal
+      spectrum = elems $ rfft $ listArray (0, n-1) signal'
+      n = length signal'
+      k = floor (1.5*f0 / (1/tau))
+      signal'' = map ((*2) . realPart) $ elems $ ifft $ listArray (0,n-1) $ take k spectrum ++ replicate (n-k) 0.0
