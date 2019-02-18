@@ -19,6 +19,7 @@ library:
     - posts/Lab2
     - posts/Lab3
     - posts/Lab4
+    - posts/Lab5
   dependencies:
     - lens
     - Chart

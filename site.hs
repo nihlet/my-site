@@ -7,12 +7,14 @@ import           Text.Pandoc.Options
 import           Lab2
 import           Lab3
 import           Lab4
+import           Lab5
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do  
     -- lab2
     -- lab3
-    lab4
+    -- lab4
+    lab5
     hakyll $ do
         match "images/*" $ do
             route   idRoute

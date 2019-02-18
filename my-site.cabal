@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6390a860a3ac6bd85cb0da013f31fd3176f731e9034879bddc10503d352c65d7
+-- hash: 9aa95ec17410ef4aacf4234460bfd14a6922acc1967313d9599a57e9d12ece9f
 
 name:           my-site
 version:        0.1.0.0
@@ -16,12 +16,14 @@ library
       Lab2
       Lab3
       Lab4
+      Lab5
   other-modules:
       Paths_my_site
   hs-source-dirs:
       posts/Lab2
       posts/Lab3
       posts/Lab4
+      posts/Lab5
   build-depends:
       Chart
     , Chart-diagrams
