@@ -8,13 +8,15 @@ import           Lab2
 import           Lab3
 import           Lab4
 import           Lab5
+import           Lab6
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do  
     -- lab2
     -- lab3
     -- lab4
-    lab5
+    -- lab5
+    lab6
     hakyll $ do
         match "images/*" $ do
             route   idRoute

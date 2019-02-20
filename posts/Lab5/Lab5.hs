@@ -1,7 +1,8 @@
 module Lab5
   (lab5
-  ,iir
   ,fir
+  ,discrets
+  ,signal
   ) where
 
 import Graphics.Rendering.Chart.Backend.Diagrams
@@ -16,8 +17,6 @@ fopt :: FileOptions
 fopt = def{_fo_size=(600,200)}
 
 -- Константы согласно заданию
-tau = 1.0
-
 a = 4 -- амплитуда сигнала
 
 f0 = 380.0 -- частота следования импульсов
