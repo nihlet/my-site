@@ -68,7 +68,7 @@ plotSignalFiltered = do
     -- plot (line "" [zip discrets signal])
     plot (line "" [zip discrets signal'])where 
       -- signal' = butterworth signal
-      signal' = iir_df2 (bArr, aArr) signal
+      signal' = iir_df1 (bArr, aArr) signal
       (a, b) = butterworthIIR fd (fpass, fstop) (attPass, attStop)
       aArr = listArray (0, length a - 1) a
       bArr = listArray (0, length b - 1) b
@@ -80,12 +80,12 @@ trasfer omega = num / den where
   j = 0 :+ 1
 
 
-plotTransfer = do
-  print $ map (magnitude . trasfer) freq
+plotTransfer =
   toFile fopt "posts/Lab6/transfer.svg" $do
     setColors [opaque blue]
-    plot (line "" [zip freq $ map (LogValue . magnitude . trasfer) freq]) where 
+    plot (line "" [zip freq $ map (logValue . magnitude . trasfer) freq]) where 
       freq = [0,1/180 .. pi]
+      logValue x = 10 *logBase 10 x
 
 -- plotZeroPole =
 --   toFile rect "posts/Lab6/zeroPole.svg" $do

@@ -26,7 +26,7 @@ analogTransferFunction (wp, ws) (attPass, attStop) = const 1 % polynome where
   p1 = fromCoeffs [alpha, 1]
   p2 n' = fromCoeffs [alpha^^2, 2 * alpha * sin(thetta n'), 1]
   thetta n' = (2 * fromIntegral n' - 1) / (2 * fromIntegral n) * pi
-  alpha = epsilon attPass ** (1 / fromIntegral n)
+  alpha = epsilon attPass ** (-1 / fromIntegral n)
   (l,r) = divMod n 2
   n = order (wp, ws) (attPass, attStop)
 
@@ -36,9 +36,11 @@ bilinear fd = (const (2 * fd) * fromCoeffs [1, -1]) :% fromCoeffs [1, 1]
   
 digitalTransferFunction :: (AF.C a, AZ.C a, RealFrac a, Floating a) =>
      a -> (a, a) -> (a, a) -> Number.Ratio.T (MathObj.Polynomial.T a)
-digitalTransferFunction fd (wp, ws) (attPass, attStop) = substitution sub anTransfer where
-  sub = bilinear fd
+digitalTransferFunction fd (wp, ws) (attPass, attStop) = substitution sub anTransfer' where
+  sub = bilinear 2
   anTransfer = analogTransferFunction (wp, ws) (attPass, attStop)
+  anTransfer' = substitution (s_omega :% const 1) anTransfer
+  s_omega = fromCoeffs [0, 1/(2 * 2 * tan(wp/2))]
 
     
 butterworthIIR :: (AF.C a, AZ.C a, RealFrac a, Floating a) =>
@@ -47,8 +49,8 @@ butterworthIIR fd (fp, fs) (attPass, attStop)  = (a,b) where
   b = coeffs $ numerator tf
   a = coeffs $ denominator tf  
   tf = digitalTransferFunction fd (wp, ws) (attPass, attStop)
-  wp = fp/(fd/2) 
-  ws = fs/(fd/2) 
+  wp = fp/(fd/2) * pi
+  ws = fs/(fd/2) * pi
     
 
 -- подстановка дробь из полиномов в дробь из полиномов
