@@ -22,14 +22,14 @@ library:
     - posts/Lab5
     - posts/Lab6
   dependencies:
-    - lens
+    - array
     - Chart
     - Chart-diagrams
     - colour
     - data-default-class
     - dsp
-    - array
-
+    - lens
+    - numeric-prelude
 executables:
   site:
     main: site.hs

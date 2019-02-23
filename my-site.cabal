@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 82657c4cb7e92f177b72d2804a4a8cbd84552cd7d88d52b476a0df0dcec85b2a
+-- hash: 2282a73651124a17cfedfde0fbff6bf6fd96fd4c59312248f4ab07b8f1a077f5
 
 name:           my-site
 version:        0.1.0.0
@@ -17,6 +17,7 @@ library
       Lab3
       Lab4
       Lab5
+      Butterworth
       Lab6
   other-modules:
       Paths_my_site
@@ -35,6 +36,7 @@ library
     , data-default-class
     , dsp
     , lens
+    , numeric-prelude
   default-language: Haskell2010
 
 executable site

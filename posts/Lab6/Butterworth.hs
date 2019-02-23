@@ -1,0 +1,93 @@
+
+module Butterworth
+  () where
+
+import qualified Algebra.Field as AF
+import MathObj.Polynomial
+import Number.Ratio
+
+import Algebra.ZeroTestable
+-- import Algebra.PrincipalIdealDomain
+
+import Prelude hiding (const)
+
+
+-- Константы согласно заданию
+-- fpass = 3500
+-- attPass = 3 
+-- fstop = 4000
+-- attStop = 5
+
+-- fd = 10000 ::Double
+
+-- wp = fpass/(fd/2)
+-- ws = fstop/(fd/2)
+
+epsilon att = sqrt (fromdB att - 1)
+fromdB att = 10**(0.1 * att)
+
+-- порядок фильтра
+order (wp, ws) (attPass, attStop) = ceiling $ logBase (ws / wp) (epsilon attStop / epsilon attPass) 
+
+
+analogTransferFunction :: (Algebra.ZeroTestable.C a, AF.C a, RealFrac a, Floating a) =>
+  (a, a) -> (a, a) -> Number.Ratio.T (MathObj.Polynomial.T a)
+analogTransferFunction (wp, ws) (attPass, attStop) = const 1 % polynome where
+  polynome = const (epsilon attPass) * p1^r * foldl (*) (const 1) (map p2 [1..l])
+  p1 = fromCoeffs [alpha, 1]
+  p2 n' = fromCoeffs [alpha^^2, 2 * alpha * sin(thetta n'), 1]
+  thetta n' = (2 * fromIntegral n' - 1) / (2 * fromIntegral n) * pi
+  alpha = epsilon attPass ** (1 / fromIntegral n)
+  (l,r) = divMod n 2
+  n = order (wp, ws) (attPass, attStop)
+
+  
+  
+bilinear fd = (const (2 * fd) * fromCoeffs [1, -1]) :% fromCoeffs [1, 1]
+  
+digitalTransferFunction fd (wp, ws) (attPass, attStop) = substitution sub anTransfer where
+  sub = bilinear fd
+  anTransfer = analogTransferFunction (wp, ws) (attPass, attStop)
+
+    
+butterworthIIR fd (fp, fs) (attPass, attStop)  = (b,a) where
+  b = coeffs $ numerator tf
+  a = coeffs $ denominator tf  
+  tf = digitalTransferFunction fd (wp, ws) (attPass, attStop)
+  wp = fp/(fd/2) * pi
+  ws = fs/(fd/2) * pi
+    
+
+-- подстановка дробь из полиномов в дробь из полиномов
+substitution :: (Num a) => Number.Ratio.T (MathObj.Polynomial.T a) -> Number.Ratio.T (MathObj.Polynomial.T a) -> Number.Ratio.T (MathObj.Polynomial.T a)
+substitution (snum :% sden) (num :% den) = num' :% den' where
+  maxExp = max (length (coeffs num) - 1) (length (coeffs den) - 1)
+  num' = step3 $ step2 sden maxExp $ step1 snum num
+  den' = step3 $ step2 sden maxExp $ step1 snum den
+
+step1 :: (Num a) =>  MathObj.Polynomial.T a -> MathObj.Polynomial.T a -> [MathObj.Polynomial.T a]
+step1 subst poly = step1' 0 c where
+  c = coeffs poly 
+  step1' _ []     = []
+  step1' n (x:xs) = (subst^n * const x) : step1' (n+1) xs
+
+step2 :: (Num a, Integral b) => MathObj.Polynomial.T a -> b -> [MathObj.Polynomial.T a] -> [MathObj.Polynomial.T a]
+step2 _ _ []     = []
+step2 den n (x:xs) = x * den^n : step2 den (n-1) xs
+
+step3:: (Num a) => [MathObj.Polynomial.T a] -> MathObj.Polynomial.T a
+step3 = foldl (+) (const 0) 
+
+
+-----------------------------------------------------
+
+
+
+-- poly1 = fromCoeffs [0,1*c,4*c]
+-- poly2 = fromCoeffs [0,1*c]
+
+poly3 = fromCoeffs [1, 0, 1 ::Double]
+poly4 = fromCoeffs [0,0,10 ::Double]
+
+
+
