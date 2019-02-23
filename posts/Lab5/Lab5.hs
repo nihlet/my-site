@@ -1,8 +1,8 @@
 module Lab5
   (lab5
-  ,fir
-  ,discrets
-  ,signal
+  ,iir
+  -- ,discrets
+  -- ,signal
   ) where
 
 import Graphics.Rendering.Chart.Backend.Diagrams
@@ -42,7 +42,7 @@ signal = map chirp discrets
 -- xs отсчеты сигнала
 iir :: Num a => [a] -> [a] -> [a] -> [a]
 iir a b xs = helper n zeros where
-  n = zeros ++ xs -- изначальный сигнал дополненный нулями
+  n = zeros ++ xs ++ zeros-- изначальный сигнал дополненный нулями
   zeros = replicate rank 0
   rank = max (length b) (length a) - 1
   helper [] _ = []  -- вспомогательная функция для прохода по всему сигналу
