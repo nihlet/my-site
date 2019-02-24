@@ -12,8 +12,6 @@ import qualified Algebra.ZeroTestable as AZ
 -- перевод из дБ в разы
 fromdB att = 10**(0.1 * att)
 
--- todo: omegaR
-
 -- порядок фильтра
 order (wp, ws) (attPass, attStop) = ceiling $ logBase (ws / wp) (epsilon attStop / epsilon attPass) 
 
@@ -37,10 +35,12 @@ bilinear fd = (const (2 * fd) * fromCoeffs [1, -1]) :% fromCoeffs [1, 1]
 digitalTransferFunction :: (AF.C a, AZ.C a, RealFrac a, Floating a) =>
      a -> (a, a) -> (a, a) -> Number.Ratio.T (MathObj.Polynomial.T a)
 digitalTransferFunction fd (wp, ws) (attPass, attStop) = substitution sub anTransfer' where
-  sub = bilinear 2
-  anTransfer = analogTransferFunction (wp, ws) (attPass, attStop)
+  sub = bilinear fd
+  anTransfer = analogTransferFunction (wpWrapped, wsWrapped) (attPass, attStop)
   anTransfer' = substitution (s_omega :% const 1) anTransfer
-  s_omega = fromCoeffs [0, 1/(2 * 2 * tan(wp/2))]
+  s_omega = fromCoeffs [0, 1/(2 * fd * tan(wp/2))]
+  wpWrapped = 2 * fd * tan(wp/2) 
+  wsWrapped = 2 * fd * tan(ws/2) 
 
     
 butterworthIIR :: (AF.C a, AZ.C a, RealFrac a, Floating a) =>
