@@ -32,6 +32,7 @@ lab4 = do
   plotSignal
   plotSignalZoomed
   plotSpectrum
+  plotSignalDecimated
   plotSpectrumDecimated
   plotSpectrumBetterResolution
   plotPrepForInterpSignal
@@ -73,6 +74,14 @@ plotSpectrum =
       discrets = init [0.0, 1.0 /fd .. tau]
       spectrum = map (* (2 / n)) $ ampSpectrum $ map function discrets
       harmonics = [0.0, 1.0/tau .. n]
+
+plotSignalDecimated =
+  toFile fopt "posts/Lab4/signalDecimated.svg" $do
+    setColors [opaque blue]
+    plot (line "" [zip discrets signal]) where
+      signal = map function discrets
+      fd' = fd / 16.0
+      discrets = init [0.0, 1.0 /fd' .. tau]
 
 plotSpectrumDecimated =
   toFile fopt "posts/Lab4/spectrumDecimated.svg" $do

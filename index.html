@@ -1,16 +1,24 @@
 ---
-title: Home
+title: Домашнаяя страница
 ---
 
-<h2>Welcome</h2>
+<p>Добро пожаловать на стартовую страницу сайта.</p>
 
-<img src="/images/haskell-logo.png" style="float: right; margin: 10px;" />
+<p>
+    Исходные коды сайта можно найти на <a href="https://github.com/nihlet/my-site">GitHub</a>.
+</p>
 
-<p>Welcome to my blog!</p>
+<p>
+    Данный сайт разработан на языке Haskell с использованием библиотеки
+    <a href="https://jaspervdj.be/hakyll/">Hakyll</a>. 
 
-<p>I've reproduced a list of recent posts here for your reading pleasure:</p>
+    Hakyll -- это библиотека Haskell для создания статических сайтов, 
+    в основном предназначенная для небольших и средних сайтов и личных блогов.
+</p>
 
-<h2>Posts</h2>
+<p>Список последних статей:</p>
+
+<h2>Статьи</h2>
 $partial("templates/post-list.html")$
 
-<p>…or you can find more in the <a href="/archive.html">archives</a>.</p>
+<p>…больше статей можно найти в архиве <a href="/archive.html">архиве</a>.</p>

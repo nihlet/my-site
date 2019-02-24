@@ -12,9 +12,9 @@ import           Lab6
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do  
-    -- lab2
-    -- lab3
-    -- lab4
+    lab2
+    lab3
+    lab4
     lab5
     lab6
     hakyll $ do

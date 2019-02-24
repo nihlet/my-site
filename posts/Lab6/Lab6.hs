@@ -21,17 +21,16 @@ rect = def{_fo_size=(400,400)}
 
 -- Константы согласно заданию
 fpass = 3500 :: Double
-attPass = 3 
+attPass = 4 
 fstop = 4000
 attStop = 28
 
 fd = 10000
-f0 = 380
 -----------------------------------------------------
 
-period = 1/f0
+period = 1/20
 
-fv = 5000
+fv = fd / 2
 
 chirp :: Double -> Double
 chirp t = a * cos(2 * pi * fv / (2 * period) * t' ^^ 2) where
@@ -62,7 +61,7 @@ plotSignal =
 plotSignalFiltered = 
   toFile fopt "posts/Lab6/signalFiltered.svg" $do
     setColors [opaque blue]
-    plot (line (show $ length signal') [zip discrets signal'])where 
+    plot (line "" [zip discrets signal'])where 
       signal' = butterworth signal
 
 transfer bt omega = num / den where 
