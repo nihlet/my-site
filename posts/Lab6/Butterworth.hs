@@ -54,11 +54,14 @@ butterworthIIR fd (fp, fs) (attPass, attStop)  = (a,b) where
     
 
 -- подстановка дробь из полиномов в дробь из полиномов
-substitution :: (AF.C a, AZ.C a, Num a) => Number.Ratio.T (MathObj.Polynomial.T a) -> Number.Ratio.T (MathObj.Polynomial.T a) -> Number.Ratio.T (MathObj.Polynomial.T a)
-substitution (snum :% sden) (num :% den) = num' % den' where
+substitution :: (AF.C a, AZ.C a, Num a, Fractional a) => Number.Ratio.T (MathObj.Polynomial.T a) -> Number.Ratio.T (MathObj.Polynomial.T a) -> Number.Ratio.T (MathObj.Polynomial.T a)
+substitution (snum :% sden) (num :% den) = num'' :% den'' where
   maxExp = max (length (coeffs num) - 1) (length (coeffs den) - 1)
   num' = step3 $ step2 sden maxExp $ step1 snum num
   den' = step3 $ step2 sden maxExp $ step1 snum den
+  num'' = const k * num'
+  den'' = const k * den'
+  k = 1 / head (coeffs den')
 
 step1 :: (Num a) =>  MathObj.Polynomial.T a -> MathObj.Polynomial.T a -> [MathObj.Polynomial.T a]
 step1 subst poly = step1' 0 c where
@@ -72,3 +75,4 @@ step2 den n (x:xs) = x * den^n : step2 den (n-1) xs
 
 step3:: (Num a) => [MathObj.Polynomial.T a] -> MathObj.Polynomial.T a
 step3 = foldl (+) (const 0) 
+

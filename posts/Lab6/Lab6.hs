@@ -26,25 +26,25 @@ rect = def{_fo_size=(400,400)}
 fpass = 3500 :: Double
 attPass = 3 
 fstop = 4000
-attStop = 5
+attStop = 28
 
 fd = 10000
 -----------------------------------------------------
 
-period = 1/50
+period = 0.05
 
 a = 1 
 
 fv = 5000
 
--- chirp :: Double -> Double
--- chirp t = a * cos(2 * pi * fv / (2 * period) * t' ^^ 2) where
---     t' = t - period * fromIntegral (floor (t / period))
+chirp :: Double -> Double
+chirp t = a * cos(2 * pi * fv / (2 * period) * t' ^^ 2) where
+    t' = t - period * fromIntegral (floor (t / period))
 
 discrets = [0.0, 1/fd .. period]
 signal = map chirp discrets
-chirp x | x < period/4 = 0
-        | otherwise = 1
+-- chirp x | x < period/4 = 0
+--         | otherwise = 1
 
 logValue x = 10 *logBase 10 x
 
@@ -68,13 +68,13 @@ plotSignalFiltered = do
   print signal'
   print $ butterworthIIR fd (fpass, fstop) (attPass, attStop)
   toFile fopt "posts/Lab6/signalFiltered.svg" $do
-    layoutlr_x_axis . laxis_generate .= scaledAxis def (0, 0.5 * period)
+    -- layoutlr_x_axis . laxis_generate .= scaledAxis def (0, 0.5 * period)
     -- layoutlr_left_axis . laxis_generate .= scaledAxis def (0, 2)
     setColors [opaque black, opaque blue]
     plotRight (line "" [zip discrets signal])
     plotLeft (line (show $ length signal') [zip discrets signal'])where 
-      signal' = butterworth signal
-      -- signal' = iir_df1 (bArr, aArr) signal
+      -- signal' = butterworth signal
+      signal' = iir_df1 (bArr, aArr) signal
       (a, b) = butterworthIIR fd (fpass, fstop) (attPass, attStop)
       aArr = listArray (0, length a - 1) a
       bArr = listArray (0, length b - 1) b
@@ -89,13 +89,10 @@ trasfer bt omega = num / den where
 plotTransfer =
   toFile fopt "posts/Lab6/transfer.svg" $do
     setColors [opaque black, opaque blue, opaque red]
-    plot (line "" [zip freq $ map (logValue . magnitude . trasfer bt1) freq])
-    plot (line "" [zip freq $ map (logValue . magnitude . trasfer bt2) freq])
-    plot (line "" [zip freq $ map (logValue . magnitude . trasfer bt3) freq]) where 
+    layout_y_axis . laxis_generate .= scaledAxis def (-40, 0)
+    plot (line "" [zip freq $ map (logValue . magnitude . trasfer bt1) freq]) where 
       freq = [0,1/180 .. pi]
       bt1 = butterworthIIR fd (fpass, fstop) (attPass, attStop)
-      bt2 = butterworthIIR fd (fpass, fstop) (attPass, 8)
-      bt3 = butterworthIIR fd (1500, fstop) (attPass, attStop)
 
 
 -- plotZeroPole =
