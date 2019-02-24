@@ -2,18 +2,15 @@ module Lab6
   (lab6
   ) where
 
-import Lab5(iir)
-
+import Butterworth 
+import Data.Array
+import Data.Complex
+import DSP.Filter.IIR.IIR
 import Graphics.Rendering.Chart.Backend.Diagrams
 import Graphics.Rendering.Chart.Easy             hiding (indices, tan)
-import DSP.Filter.IIR.IIR
-
+import Lab5(iir)
 import MathObj.Polynomial hiding (reverse)
 
-import Data.Complex
-import Data.Array
-
-import Butterworth (butterworthIIR)
 
 -- Вспомогательные величины
 fopt :: FileOptions
@@ -29,22 +26,22 @@ fstop = 4000
 attStop = 28
 
 fd = 10000
+f0 = 380
 -----------------------------------------------------
 
-period = 0.05
-
-a = 1 
+period = 1/f0
 
 fv = 5000
 
 chirp :: Double -> Double
 chirp t = a * cos(2 * pi * fv / (2 * period) * t' ^^ 2) where
     t' = t - period * fromIntegral (floor (t / period))
+    a = 1 
 
-discrets = [0.0, 1/fd .. period]
+discrets = [0.0, 1/fd .. 2 * period]
 signal = map chirp discrets
 
-logValue x = 10 *logBase 10 x
+logValue x = 10 * logBase 10 x
 
 butterworth = iir a b where 
   (a,b) = butterworthIIR fd (fpass, fstop) (attPass, attStop)
@@ -52,7 +49,7 @@ butterworth = iir a b where
 lab6 :: IO () 
 lab6 = do
   plotSignal
-  -- plotZeroPole
+  plotZeroPole
   plotSignalFiltered
   plotTransfer
 
@@ -62,24 +59,13 @@ plotSignal =
     setColors [opaque blue]
     plot (line "" [zip discrets signal])
 
-plotSignalFiltered = do
-  print $ take 20 signal'
-  print $ take 20 signal''
-  print $ butterworthIIR fd (fpass, fstop) (attPass, attStop)
+plotSignalFiltered = 
   toFile fopt "posts/Lab6/signalFiltered.svg" $do
-    -- layoutlr_x_axis . laxis_generate .= scaledAxis def (0, 0.5 * period)
-    -- layoutlr_left_axis . laxis_generate .= scaledAxis def (0, 2)
-    setColors [opaque black, opaque blue, opaque red]
-    -- plotRight (line "" [zip discrets signal])
-    plotLeft (line (show $ length signal') [zip discrets signal'])
-    plotRight (line (show $ length signal'') [zip discrets signal''])where 
+    setColors [opaque blue]
+    plot (line (show $ length signal') [zip discrets signal'])where 
       signal' = butterworth signal
-      signal'' = iir_df1 (bArr, aArr) signal
-      (a, b) = butterworthIIR fd (fpass, fstop) (attPass, attStop)
-      aArr = listArray (0, length a - 1) a
-      bArr = listArray (0, length b - 1) b
 
-trasfer bt omega = num / den where 
+transfer bt omega = num / den where 
   (a, b) = bt
   num = evaluate (fromCoeffs $ map (:+0) b) (exp (-(omega :+ 0) * j))
   den = evaluate (fromCoeffs $ map (:+0) a) (exp (-(omega :+ 0) * j))
@@ -90,27 +76,17 @@ plotTransfer =
   toFile fopt "posts/Lab6/transfer.svg" $do
     setColors [opaque black, opaque blue, opaque red]
     layout_y_axis . laxis_generate .= scaledAxis def (-40, 0)
-    plot (line "" [zip freq $ map (logValue . magnitude . trasfer bt1) freq]) where 
-      freq = [0,1/180 .. pi]
+    plot (line "" [zip freq $ map (logValue . magnitude . transfer bt1) freq]) where 
+      freq = [0, pi/180 .. pi]
       bt1 = butterworthIIR fd (fpass, fstop) (attPass, attStop)
 
 
--- plotZeroPole =
---   toFile rect "posts/Lab6/zeroPole.svg" $do
---     setColors [opaque blue, opaque red]
---     plot (line "" [circle]) 
---     plot (points "" poles) where
---       circle = [(sin x, cos x) | x <- [0, pi/180 .. 2*pi::Double]]
---       poles = [(sin x, cos x) | x <- [0, pi/n .. 2*pi::Double]]
-      
-
------------------------------------------------------
-
-
-
-
-
-
-
-
-
+plotZeroPole =
+  toFile rect "posts/Lab6/zeroPole.svg" $do
+    setColors [opaque blue, opaque red]
+    plot (line "" [circle]) 
+    plot (points "" poles) where
+      circle = [(cos x, sin x) | x <- [0, pi/180 .. 2*pi::Double]]
+      poles = [(cos x, sin x) | x <- xpoles]
+      n = fromIntegral $ order fd (fpass, fstop) (attPass, attStop)
+      xpoles = filter (<=(3/2 * pi)) $ filter (>=pi/2) [0, pi/8 .. 2 * pi::Double]

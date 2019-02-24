@@ -9,6 +9,7 @@ import Graphics.Rendering.Chart.Backend.Diagrams
 import Graphics.Rendering.Chart.Easy             hiding (indices)
 
 import Data.Array
+import MathObj.Polynomial 
 import Data.Complex
 import Numeric.Transform.Fourier.FFT
 
@@ -38,7 +39,7 @@ chirp t = a * cos(2 * pi * fv / (2 * period) * t' ^^ 2) where
 discrets = [0.0, 1/fd .. 2 * period]
 signal = map chirp discrets
 
--- a, b список коэффициентов БИХ фильтра. Например фильтр 2 порядка: [a2,a1,a0] [b2,b1,b0]
+-- a, b список коэффициентов БИХ фильтра. Например фильтр 2 порядка: [a0,a1,a2] [b0,b1,b2]
 -- xs отсчеты сигнала
 iir :: Num a => [a] -> [a] -> [a] -> [a]
 iir a b xs = helper xs zeros zeros where
@@ -61,6 +62,7 @@ lab5 = do
   plotFIR2
   plotIIR1
   plotIIR2
+  plotIIR2Slow
   plotTransferIIR2
 
 -- черезпериодный вычитатель 1 порядка
@@ -70,11 +72,11 @@ fir1 = fir [-1, 1]
 fir2 = fir [0.5, -1, 0.5]
 
 -- рециркулятор
-iir1 = iir [-r] [1]
+iir1 = iir [1, -r] [1]
 
 -- Комплексный резонатор
-iir2 = iir [-k] [1] where
-  k = (r :+ 0) * exp (j * 2 * pi * ((fc / fd) :+ 0) )
+iir2 = iir [0,-k] [1] where
+  k = (r :+ 0) * exp (j * pi * ((fc / (fd/2) ) :+ 0) )
 
 plotSignal =
   toFile fopt "posts/Lab5/signal.svg" $do
@@ -106,20 +108,61 @@ plotIIR2 =
     layoutlr_right_axis . laxis_override .= axisGridHide
     plotLeft  (line "" [zip discrets signal'']) 
     plotRight (line "" [zip discrets $ map freq discrets]) 
-    plotRight (points "" [(7000.0 * period / fv, 7000.0), (7000.0 * period / fv + period, 7000.0)]) -- todo 90% что здесь ошибка
-    where
+    plotRight (points "" [(fc * period / fv, fc), (fc * period / fv + period, fc)]) where
       signal' = iir2 $ map (:+ 0) signal
       signal'' = map realPart signal'
       freq t = fv / period * t' where
         t' = t - period * fromIntegral (floor (t / period))
 
+
+plotIIR2Slow =
+  toFile fopt "posts/Lab5/signal_iir2_slow.svg" $do
+    setColors [opaque blue, opaque red, opaque red]
+    layoutlr_left_axis . laxis_override .= axisGridHide
+    layoutlr_right_axis . laxis_override .= axisGridHide
+    plotLeft  (line "" [zip discrets signal'']) 
+    plotRight (line "" [zip discrets $ map freq discrets]) 
+    plotRight (points "" [(fc * period / fv, fc), (fc * period / fv + period, fc)]) where
+      signal' = iir2 $ map (:+ 0) signal
+      signal'' = map realPart signal'
+      freq t = fv / period * t' where
+        t' = t - period * fromIntegral (floor (t / period))
+
+      -- делаем период сигнала больше, для того чтобы снизить скорость изменения частоты и переопределяем глобальные функции
+      period  = 20 / f0 
+      signal = map chirp discrets
+      discrets = [0.0, 1/fd .. 2 * period]   
+
+      chirp :: Double -> Double
+      chirp t = a * cos(2 * pi * fv / (2 * period) * t' ^^ 2) where
+        t' = t - period * fromIntegral (floor (t / period))
+
+      
+
 plotTransferIIR2 = 
   toFile fopt "posts/Lab5/signal_iir2_transfer.svg" $do
     setColors [opaque blue]
     plot (line "" [zip freq (map transfer freq)]) where
-      transfer f =1 / sqrt (1 + r^^2 - 2 * r * cos (2 * pi * (f - fc) / fd))
+      transfer f =1 / sqrt (1 + r^^2 - 2 * r * cos (2 * pi * (f - fc) / (fd/2) ))
       freq = [0, fv/1000 .. fv]
       
+
+-- logValue x = 10 * logBase 10 x
+
+-- transfer (a,b) omega = num / den where 
+--   num = evaluate (fromCoeffs $ map (:+0) b) (exp (-(omega :+ 0) * j))
+--   den = evaluate (fromCoeffs a) (exp (-(omega :+ 0) * j))
+--   j = 0 :+ 1
+
+
+-- plotTransferIIR2 = 
+--   toFile fopt "posts/Lab5/signal_iir2_transfer.svg" $do
+--     setColors [opaque black, opaque blue, opaque red]
+--     -- layout_y_axis . laxis_generate .= scaledAxis def (-40, 0)
+--     plot (line "" [zip freq $ map (logValue . magnitude . transfer irr2) freq]) where 
+--       freq = [0, pi/180 .. pi :: Double]
+--       irr2 = ([0,-k], [1]) where
+--         k = (r :+ 0) * exp (j * ((fc/(fd/2) * pi):+0))
 
 
 

@@ -1,6 +1,10 @@
 
 module Butterworth
-  (butterworthIIR) where
+  (
+    butterworthIIR
+  , order
+  , orderWrapped
+  ) where
 
 import Algebra.ZeroTestable
 import MathObj.Polynomial
@@ -13,20 +17,27 @@ import qualified Algebra.ZeroTestable as AZ
 fromdB att = 10**(0.1 * att)
 
 -- порядок фильтра
-order (wp, ws) (attPass, attStop) = ceiling $ logBase (ws / wp) (epsilon attStop / epsilon attPass) 
+orderWrapped (wpWrapped, wsWrapped) (attPass, attStop) = ceiling $ logBase (wsWrapped / wpWrapped) (epsilon attStop / epsilon attPass) 
 
+order fd (fp, fs) (attPass, attStop) = ceiling $ logBase (wsWrapped / wpWrapped) (epsilon attStop / epsilon attPass)  where
+  wpWrapped = 2 * fd * tan(wp/2) 
+  wsWrapped = 2 * fd * tan(ws/2) 
+  wp = fp/(fd/2) * pi
+  ws = fs/(fd/2) * pi
+
+    
 epsilon att = sqrt (fromdB att - 1)
 
 analogTransferFunction :: (AF.C a, AZ.C a, RealFrac a, Floating a) =>
   (a, a) -> (a, a) -> Number.Ratio.T (MathObj.Polynomial.T a)
-analogTransferFunction (wp, ws) (attPass, attStop) = const 1 % polynome where
+analogTransferFunction (wpWrapped, wsWrapped) (attPass, attStop) = const 1 % polynome where
   polynome = const (epsilon attPass) * p1^r * foldl (*) (const 1) (map p2 [1..l])
   p1 = fromCoeffs [alpha, 1]
   p2 n' = fromCoeffs [alpha^^2, 2 * alpha * sin(thetta n'), 1]
   thetta n' = (2 * fromIntegral n' - 1) / (2 * fromIntegral n) * pi
   alpha = epsilon attPass ** (-1 / fromIntegral n)
   (l,r) = divMod n 2
-  n = order (wp, ws) (attPass, attStop)
+  n = orderWrapped (wpWrapped, wsWrapped) (attPass, attStop)
 
   
 bilinear:: (Num a) => a -> Number.Ratio.T (MathObj.Polynomial.T a) 
@@ -38,7 +49,7 @@ digitalTransferFunction fd (wp, ws) (attPass, attStop) = substitution sub anTran
   sub = bilinear fd
   anTransfer = analogTransferFunction (wpWrapped, wsWrapped) (attPass, attStop)
   anTransfer' = substitution (s_omega :% const 1) anTransfer
-  s_omega = fromCoeffs [0, 1/(2 * fd * tan(wp/2))]
+  s_omega = fromCoeffs [0, 1 / wpWrapped]
   wpWrapped = 2 * fd * tan(wp/2) 
   wsWrapped = 2 * fd * tan(ws/2) 
 
