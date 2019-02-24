@@ -59,7 +59,7 @@ substitution (snum :% sden) (num :% den) = num'' :% den'' where
   maxExp = max (length (coeffs num) - 1) (length (coeffs den) - 1)
   num' = step3 $ step2 sden maxExp $ step1 snum num
   den' = step3 $ step2 sden maxExp $ step1 snum den
-  num'' = const k * num'
+  num'' = const k * num' -- нормировка полиномов по 0 степени знаменателя
   den'' = const k * den'
   k = 1 / head (coeffs den')
 

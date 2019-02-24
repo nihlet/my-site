@@ -41,14 +41,14 @@ signal = map chirp discrets
 -- a, b список коэффициентов БИХ фильтра. Например фильтр 2 порядка: [a2,a1,a0] [b2,b1,b0]
 -- xs отсчеты сигнала
 iir :: Num a => [a] -> [a] -> [a] -> [a]
-iir a b xs = helper n zeros where
-  n = zeros ++ xs ++ zeros-- изначальный сигнал дополненный нулями
+iir a b xs = helper xs zeros zeros where
   zeros = replicate rank 0
-  rank = max (length b) (length a) - 1
-  helper [] _ = []  -- вспомогательная функция для прохода по всему сигналу
-  helper ns mem = next : helper (tail ns) mem' where
-    next = sum (zipWith (*) b ns) - sum (zipWith (*) a mem)
-    mem' = next : init mem 
+  rank = max (length b) (length a)  -- - 1
+  helper [] _ _ = []  -- вспомогательная функция для прохода по всему сигналу
+  helper ns x_mem y_mem = next : helper (tail ns) x_mem' y_mem' where
+    next = sum (zipWith (*) b x_mem') - sum (zipWith (*) a $ 0:y_mem)
+    y_mem' = next : init y_mem 
+    x_mem' = head ns : init x_mem
 
   
 -- КИХ фильтр как частный случай БИХ фильтра
