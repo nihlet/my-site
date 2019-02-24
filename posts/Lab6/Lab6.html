@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>My Hakyll Blog - Расчет ФНЧ Баттерворта и реализация цифрового фильтра (задача 6)</title>
+        <link rel="stylesheet" href="../../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <a href="../../">My Hakyll Blog</a>
+            </div>
+            <nav>
+                <a href="../../">Home</a>
+                <a href="../../about.html">About</a>
+                <a href="../../contact.html">Contact</a>
+                <a href="../../archive.html">Archive</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <h1>Расчет ФНЧ Баттерворта и реализация цифрового фильтра (задача 6)</h1>
+            <article>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML" async></script>
+    </script>
+    <link rel="stylesheet" href="../../third-party/highlight/styles/default.css">
+    <script src="../../third-party/highlight/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <section class="header">
+        Опубликовано 2019-02-24<br>
+        
+        автор: Воронин Андрей
+        
+    </section>
+    <section>
+        <p>4 вариант.</p>
+<h1 id="�">Дано:</h1>
+<p>Ослабление \(&gt; 28\) дБ при \(f=4000\) Гц и \(&lt; 4\) дБ при \(f=3500\) Гц;</p>
+<p>Частота следования импульсов \(f_0=380\)</p>
+<h1 id="�">Задание:</h1>
+<p>Найти порядок фильтра, описать нуль-полюсную диаграмму, записать передаточную функцию, построить АЧХ фильтра (частота дискретизации 10000 Гц). Составить алгоритм цифрового БИХ-фильтра. Реализовать его в программном коде. Подать на вход действительный ЛЧМ-сигнал и представить результат прохождения сигнала через ЦФ.</p>
+<h1 id="���-���-�">Этапы решения задания</h1>
+<p>Относитенльная частота пропускания и частота остановки цифрового фильтра находятся из выражения:</p>
+<p>\[ \omega = \frac{f} {(f_d / 2)} \cdot \pi\].</p>
+<p>Поскольку переход от аналогового фильтра к цифровому осуществляется через билинейное преобразование, которое искажает шкалу частот, то на первом шаге необходимо учесть это искажение для того чтобы сформулировать требования к коридору АЧХ аналогового фильтра таким образом, чтобы на пятом шаге при билинейном преобразовании получить именно тот фильтр что нам нужен. Искажение шкалы частот при билинейном преобразовании происходит согласно выражению:</p>
+<p>\[ \Omega = 2\cdot f_d \tan (\omega/2) \].</p>
+<h2 id="-���-����">Порядок цифрового фильтра</h2>
+<p>Порядок цифрового фильтра определяется по формуле аналогового фильтра:</p>
+<p>\[ N = \frac{\log(\epsilon_s/\epsilon_p)}{\log(\Omega_s/\Omega_p)} \],</p>
+<p>где \(\epsilon_p = \sqrt{10^{R_p/10}-1}\), \(\epsilon_s = \sqrt{10^{R_s/10}-1}\).</p>
+<p>Таким образом, порядок фильтра из имеющихся данных можно найти при помощи следующией функции:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1">order fd (fp, fs) (attPass, attStop) <span class="fu">=</span> <span class="fu">ceiling</span> <span class="fu">$</span> <span class="fu">logBase</span> (wsWrapped <span class="fu">/</span> wpWrapped) (epsilon attStop <span class="fu">/</span> epsilon attPass)</a>
+<a class="sourceLine" id="cb1-2" title="2"> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-3" title="3">  wpWrapped <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> fd <span class="fu">*</span> <span class="fu">tan</span>(wp<span class="fu">/</span><span class="dv">2</span>) </a>
+<a class="sourceLine" id="cb1-4" title="4">  wsWrapped <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> fd <span class="fu">*</span> <span class="fu">tan</span>(ws<span class="fu">/</span><span class="dv">2</span>) </a>
+<a class="sourceLine" id="cb1-5" title="5">  wp <span class="fu">=</span> fp<span class="fu">/</span>(fd<span class="fu">/</span><span class="dv">2</span>) <span class="fu">*</span> <span class="fu">pi</span></a>
+<a class="sourceLine" id="cb1-6" title="6">  ws <span class="fu">=</span> fs<span class="fu">/</span>(fd<span class="fu">/</span><span class="dv">2</span>) <span class="fu">*</span> <span class="fu">pi</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8">fromdB att <span class="fu">=</span> <span class="dv">10</span><span class="fu">**</span>(<span class="fl">0.1</span> <span class="fu">*</span> att)</a></code></pre></div>
+<p>Где отношение логорифмов приведено к логорифму по основанию.</p>
+<h2 id="���-���-�">Нуль-полюсная диаграмма</h2>
+<figure>
+<img src="zeroPole.svg" alt="Рис. 1: Нуль-польюсная диаграмма" /><figcaption>Рис. 1: Нуль-польюсная диаграмма</figcaption>
+</figure>
+<h2 id="�-����-����">Аналоговая передаточная функция</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="ot">analogTransferFunction ::</span> (<span class="dt">AF.C</span> a, <span class="dt">AZ.C</span> a, <span class="dt">RealFrac</span> a, <span class="dt">Floating</span> a) <span class="ot">=&gt;</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  (a, a) <span class="ot">-&gt;</span> (a, a) <span class="ot">-&gt;</span> <span class="dt">Number.Ratio.T</span> (<span class="dt">MathObj.Polynomial.T</span> a)</a>
+<a class="sourceLine" id="cb2-3" title="3">analogTransferFunction (wpWrapped, wsWrapped) (attPass, attStop) <span class="fu">=</span> <span class="fu">const</span> <span class="dv">1</span> <span class="fu">%</span> polynome <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-4" title="4">  polynome <span class="fu">=</span> <span class="fu">const</span> (epsilon attPass) <span class="fu">*</span> p1<span class="fu">^</span>r <span class="fu">*</span> <span class="fu">foldl</span> (<span class="fu">*</span>) (<span class="fu">const</span> <span class="dv">1</span>) (<span class="fu">map</span> p2 [<span class="dv">1</span><span class="fu">..</span>l])</a>
+<a class="sourceLine" id="cb2-5" title="5">  p1 <span class="fu">=</span> fromCoeffs [alpha, <span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb2-6" title="6">  p2 n' <span class="fu">=</span> fromCoeffs [alpha<span class="fu">^^</span><span class="dv">2</span>, <span class="dv">2</span> <span class="fu">*</span> alpha <span class="fu">*</span> <span class="fu">sin</span>(thetta n'), <span class="dv">1</span>]</a>
+<a class="sourceLine" id="cb2-7" title="7">  thetta n' <span class="fu">=</span> (<span class="dv">2</span> <span class="fu">*</span> <span class="fu">fromIntegral</span> n' <span class="fu">-</span> <span class="dv">1</span>) <span class="fu">/</span> (<span class="dv">2</span> <span class="fu">*</span> <span class="fu">fromIntegral</span> n) <span class="fu">*</span> <span class="fu">pi</span></a>
+<a class="sourceLine" id="cb2-8" title="8">  alpha <span class="fu">=</span> epsilon attPass <span class="fu">**</span> (<span class="fu">-</span><span class="dv">1</span> <span class="fu">/</span> <span class="fu">fromIntegral</span> n)</a>
+<a class="sourceLine" id="cb2-9" title="9">  (l,r) <span class="fu">=</span> <span class="fu">divMod</span> n <span class="dv">2</span></a>
+<a class="sourceLine" id="cb2-10" title="10">  n <span class="fu">=</span> orderWrapped (wpWrapped, wsWrapped) (attPass, attStop)</a></code></pre></div>
+<h2 id="��-����-z-���">Передаточная функция в z-плоскости</h2>
+<p>Переход к передаточной фунции в z-плоскости получается путем двух последовательных подстановок при помощи функции <code>substitution</code> в аналоговую передаточную функцию:</p>
+<ul>
+<li>преобразование шкалы частот</li>
+<li>z-преобразование</li>
+</ul>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">digitalTransferFunction ::</span> (<span class="dt">AF.C</span> a, <span class="dt">AZ.C</span> a, <span class="dt">RealFrac</span> a, <span class="dt">Floating</span> a) <span class="ot">=&gt;</span></a>
+<a class="sourceLine" id="cb3-2" title="2">     a <span class="ot">-&gt;</span> (a, a) <span class="ot">-&gt;</span> (a, a) <span class="ot">-&gt;</span> <span class="dt">Number.Ratio.T</span> (<span class="dt">MathObj.Polynomial.T</span> a)</a>
+<a class="sourceLine" id="cb3-3" title="3">digitalTransferFunction fd (wp, ws) (attPass, attStop) <span class="fu">=</span> substitution sub anTransfer' <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  sub <span class="fu">=</span> bilinear fd</a>
+<a class="sourceLine" id="cb3-5" title="5">  anTransfer <span class="fu">=</span> analogTransferFunction (wpWrapped, wsWrapped) (attPass, attStop)</a>
+<a class="sourceLine" id="cb3-6" title="6">  anTransfer' <span class="fu">=</span> substitution (s_omega <span class="fu">:%</span> <span class="fu">const</span> <span class="dv">1</span>) anTransfer</a>
+<a class="sourceLine" id="cb3-7" title="7">  s_omega <span class="fu">=</span> fromCoeffs [<span class="dv">0</span>, <span class="dv">1</span> <span class="fu">/</span> wpWrapped]</a>
+<a class="sourceLine" id="cb3-8" title="8">  wpWrapped <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> fd <span class="fu">*</span> <span class="fu">tan</span>(wp<span class="fu">/</span><span class="dv">2</span>) </a>
+<a class="sourceLine" id="cb3-9" title="9">  wsWrapped <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> fd <span class="fu">*</span> <span class="fu">tan</span>(ws<span class="fu">/</span><span class="dv">2</span>) </a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="ot">bilinear::</span> (<span class="dt">Num</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Number.Ratio.T</span> (<span class="dt">MathObj.Polynomial.T</span> a) </a>
+<a class="sourceLine" id="cb3-12" title="12">bilinear fd <span class="fu">=</span> (<span class="fu">const</span> (<span class="dv">2</span> <span class="fu">*</span> fd) <span class="fu">*</span> fromCoeffs [<span class="dv">1</span>, <span class="fu">-</span><span class="dv">1</span>]) <span class="fu">:%</span> fromCoeffs [<span class="dv">1</span>, <span class="dv">1</span>]</a></code></pre></div>
+<p>Функция <code>substitution</code> определена как:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="co">-- подстановка дробь из полиномов в дробь из полиномов</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="ot">substitution ::</span> (<span class="dt">AF.C</span> a, <span class="dt">AZ.C</span> a, <span class="dt">Num</span> a, <span class="dt">Fractional</span> a) <span class="ot">=&gt;</span> </a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="dt">Number.Ratio.T</span> (<span class="dt">MathObj.Polynomial.T</span> a) <span class="ot">-&gt;</span> </a>
+<a class="sourceLine" id="cb4-4" title="4">  <span class="dt">Number.Ratio.T</span> (<span class="dt">MathObj.Polynomial.T</span> a) <span class="ot">-&gt;</span> <span class="dt">Number.Ratio.T</span> (<span class="dt">MathObj.Polynomial.T</span> a)</a>
+<a class="sourceLine" id="cb4-5" title="5">substitution (snum <span class="fu">:%</span> sden) (num <span class="fu">:%</span> den) <span class="fu">=</span> num'' <span class="fu">:%</span> den'' <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-6" title="6">  maxExp <span class="fu">=</span> <span class="fu">max</span> (<span class="fu">length</span> (coeffs num) <span class="fu">-</span> <span class="dv">1</span>) (<span class="fu">length</span> (coeffs den) <span class="fu">-</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb4-7" title="7">  num' <span class="fu">=</span> step3 <span class="fu">$</span> step2 sden maxExp <span class="fu">$</span> step1 snum num</a>
+<a class="sourceLine" id="cb4-8" title="8">  den' <span class="fu">=</span> step3 <span class="fu">$</span> step2 sden maxExp <span class="fu">$</span> step1 snum den</a>
+<a class="sourceLine" id="cb4-9" title="9">  num'' <span class="fu">=</span> <span class="fu">const</span> k <span class="fu">*</span> num' <span class="co">-- нормировка полиномов по 0 степени знаменателя</span></a>
+<a class="sourceLine" id="cb4-10" title="10">  den'' <span class="fu">=</span> <span class="fu">const</span> k <span class="fu">*</span> den'</a>
+<a class="sourceLine" id="cb4-11" title="11">  k <span class="fu">=</span> <span class="dv">1</span> <span class="fu">/</span> <span class="fu">head</span> (coeffs den')</a>
+<a class="sourceLine" id="cb4-12" title="12"></a>
+<a class="sourceLine" id="cb4-13" title="13"><span class="ot">step1 ::</span> (<span class="dt">Num</span> a) <span class="ot">=&gt;</span>  <span class="dt">MathObj.Polynomial.T</span> a <span class="ot">-&gt;</span> <span class="dt">MathObj.Polynomial.T</span> a <span class="ot">-&gt;</span> [<span class="dt">MathObj.Polynomial.T</span> a]</a>
+<a class="sourceLine" id="cb4-14" title="14">step1 subst poly <span class="fu">=</span> step1' <span class="dv">0</span> c <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-15" title="15">  c <span class="fu">=</span> coeffs poly </a>
+<a class="sourceLine" id="cb4-16" title="16">  step1' _ []     <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb4-17" title="17">  step1' n (x<span class="fu">:</span>xs) <span class="fu">=</span> (subst<span class="fu">^</span>n <span class="fu">*</span> <span class="fu">const</span> x) <span class="fu">:</span> step1' (n<span class="fu">+</span><span class="dv">1</span>) xs</a>
+<a class="sourceLine" id="cb4-18" title="18"></a>
+<a class="sourceLine" id="cb4-19" title="19"><span class="ot">step2 ::</span> (<span class="dt">Num</span> a, <span class="dt">Integral</span> b) <span class="ot">=&gt;</span> <span class="dt">MathObj.Polynomial.T</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> [<span class="dt">MathObj.Polynomial.T</span> a] <span class="ot">-&gt;</span> [<span class="dt">MathObj.Polynomial.T</span> a]</a>
+<a class="sourceLine" id="cb4-20" title="20">step2 _ _ []     <span class="fu">=</span> []</a>
+<a class="sourceLine" id="cb4-21" title="21">step2 den n (x<span class="fu">:</span>xs) <span class="fu">=</span> x <span class="fu">*</span> den<span class="fu">^</span>n <span class="fu">:</span> step2 den (n<span class="fu">-</span><span class="dv">1</span>) xs</a>
+<a class="sourceLine" id="cb4-22" title="22"></a>
+<a class="sourceLine" id="cb4-23" title="23"><span class="ot">step3::</span> (<span class="dt">Num</span> a) <span class="ot">=&gt;</span> [<span class="dt">MathObj.Polynomial.T</span> a] <span class="ot">-&gt;</span> <span class="dt">MathObj.Polynomial.T</span> a</a>
+<a class="sourceLine" id="cb4-24" title="24">step3 <span class="fu">=</span> <span class="fu">foldl</span> (<span class="fu">+</span>) (<span class="fu">const</span> <span class="dv">0</span>) </a></code></pre></div>
+<p>Удобная интерфейсная функция для создация цифрового фильтра Баттерворта определена как:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="ot">butterworthIIR ::</span> (<span class="dt">AF.C</span> a, <span class="dt">AZ.C</span> a, <span class="dt">RealFrac</span> a, <span class="dt">Floating</span> a) <span class="ot">=&gt;</span></a>
+<a class="sourceLine" id="cb5-2" title="2">    a <span class="ot">-&gt;</span> (a, a) <span class="ot">-&gt;</span> (a, a) <span class="ot">-&gt;</span> ([a], [a])</a>
+<a class="sourceLine" id="cb5-3" title="3">butterworthIIR fd (fp, fs) (attPass, attStop)  <span class="fu">=</span> (a,b) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  b <span class="fu">=</span> coeffs <span class="fu">$</span> <span class="fu">numerator</span> tf</a>
+<a class="sourceLine" id="cb5-5" title="5">  a <span class="fu">=</span> coeffs <span class="fu">$</span> <span class="fu">denominator</span> tf  </a>
+<a class="sourceLine" id="cb5-6" title="6">  tf <span class="fu">=</span> digitalTransferFunction fd (wp, ws) (attPass, attStop)</a>
+<a class="sourceLine" id="cb5-7" title="7">  wp <span class="fu">=</span> fp<span class="fu">/</span>(fd<span class="fu">/</span><span class="dv">2</span>) <span class="fu">*</span> <span class="fu">pi</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  ws <span class="fu">=</span> fs<span class="fu">/</span>(fd<span class="fu">/</span><span class="dv">2</span>) <span class="fu">*</span> <span class="fu">pi</span></a></code></pre></div>
+<p>Результат вызова функции с заданными параметрами дает нам фильтр 7 порядка:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="fu">&gt;</span> butterworthIIR <span class="dv">10000</span> (<span class="dv">3500</span>,<span class="dv">4000</span>) (<span class="dv">4</span>,<span class="dv">28</span>)</a>
+<a class="sourceLine" id="cb6-2" title="2"></a>
+<a class="sourceLine" id="cb6-3" title="3">([<span class="fl">1.0</span>,<span class="fl">2.6754547177527477</span>,<span class="fl">3.7351846414329093</span>,<span class="fl">3.1471218198282607</span>,</a>
+<a class="sourceLine" id="cb6-4" title="4"><span class="fl">1.7090587847979137</span>,<span class="fl">0.5855567013649557</span>,<span class="fl">0.11645759969899837</span>,<span class="fl">1.0280589401484677e-2</span>],</a>
+<a class="sourceLine" id="cb6-5" title="5">[<span class="fl">0.10139933479904117</span>,<span class="fl">0.7097953435932882</span>,<span class="fl">2.1293860307798647</span>,<span class="fl">3.548976717966441</span>,</a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="fl">3.548976717966441</span>,<span class="fl">2.1293860307798647</span>,<span class="fl">0.7097953435932882</span>,<span class="fl">0.10139933479904117</span>])</a></code></pre></div>
+<h2 id="৥-����">АЧХ фильтра</h2>
+<p>АЧХ фильтра находится путем подстановки \(z^{-1} \rightarrow e^{j \omega}\)</p>
+<figure>
+<img src="transfer.svg" alt="Рис. 2: АЧХ цифрового фильтра" /><figcaption>Рис. 2: АЧХ цифрового фильтра</figcaption>
+</figure>
+<h2 id="�-������">Сигнал и его фильтрация</h2>
+<figure>
+<img src="signal.svg" alt="Рис. 3: ЛЧМ сигнал" /><figcaption>Рис. 3: ЛЧМ сигнал</figcaption>
+</figure>
+<p>Фильтрация производится функцией определенной в <a href="../../posts/Lab5/Lab5.html">задании 5</a>.</p>
+<figure>
+<img src="signalFiltered.svg" alt="Рис. 4: Сигнал после фильтрации" /><figcaption>Рис. 4: Сигнал после фильтрации</figcaption>
+</figure>
+    </section>
+</article>
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+    </body>
+</html>

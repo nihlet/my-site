@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>My Hakyll Blog - Частотно-временные деформации дискретного сигнала (задание 4)</title>
+        <link rel="stylesheet" href="../../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <a href="../../">My Hakyll Blog</a>
+            </div>
+            <nav>
+                <a href="../../">Home</a>
+                <a href="../../about.html">About</a>
+                <a href="../../contact.html">Contact</a>
+                <a href="../../archive.html">Archive</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <h1>Частотно-временные деформации дискретного сигнала (задание 4)</h1>
+            <article>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML" async></script>
+    </script>
+    <link rel="stylesheet" href="../../third-party/highlight/styles/default.css">
+    <script src="../../third-party/highlight/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <section class="header">
+        Опубликовано 2019-01-29<br>
+        
+        автор: Воронин Андрей
+        
+    </section>
+    <section>
+        <p>4 вариант.</p>
+<h1 id="�">Дано:</h1>
+<p>сигнал с амплитудной модуляцией вида \[a(t) = (1 + A \cos(2\pi\cdot f_A \cdot t)\cdot \cos(2\pi\cdot f_0\cdot t)\] Частота дискретизации \(f_d\). Длительность сигнала 1 секунда.</p>
+<ul>
+<li>\(f_0 = 1300.6\) Гц;</li>
+<li>\(f_A = 11.3\) Гц;</li>
+<li>\(f_d = 4096\) Гц;</li>
+<li>\(A = 0.8\);</li>
+<li>\(L = 4\).</li>
+</ul>
+<h1 id="�">Задание:</h1>
+<ol type="1">
+<li>Путем децимации (уменьшения частоты дискретизации) сделать перенос спектра сигнала так, чтобы центральная частота сигнала принадлежала диапазону \([2f_a;8f_a]\).</li>
+<li>Увеличив длину последовательности отсчетов дополнением нулями, повысить разрешающую способность по частоте в 4 раза.</li>
+<li>С помощью процедуры интерполяции (или восстановлением отсутствующих отсчетов) дискретного сигнала увеличить частоту дискретизации в L раз.</li>
+</ol>
+<h1 id="���-���-�">Этапы решения задания</h1>
+<h2 id="�-�">Оригинальный сигнал</h2>
+<p>В первую очередь построим оригинальный сигнал.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">function ::</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb1-2" title="2">function t <span class="fu">=</span> (<span class="dv">1</span> <span class="fu">+</span> a <span class="fu">*</span> <span class="fu">cos</span>(<span class="dv">2</span><span class="fu">*</span> <span class="fu">pi</span> <span class="fu">*</span> fa <span class="fu">*</span> t)) <span class="fu">*</span> <span class="fu">cos</span>(<span class="dv">2</span> <span class="fu">*</span> <span class="fu">pi</span> <span class="fu">*</span> f0 <span class="fu">*</span>t)</a></code></pre></div>
+<figure>
+<img src="signal.svg" alt="Рис. 1: Сигнал" /><figcaption>Рис. 1: Сигнал</figcaption>
+</figure>
+<figure>
+<img src="signalZoomed.svg" alt="Рис. 2: Увеличенный фрагмент сигнала" /><figcaption>Рис. 2: Увеличенный фрагмент сигнала</figcaption>
+</figure>
+<figure>
+<img src="spectrum.svg" alt="Рис. 3: Спектр сигнала" /><figcaption>Рис. 3: Спектр сигнала</figcaption>
+</figure>
+<h2 id="䦦�-�">Децимация сигнала</h2>
+<p>Для того чтобы построить сигнал принадлежал диапазону \([2f_A;8f_A]\) понизим частоту дискретизации в 16 раз:</p>
+<p><code>fd' = fd / 16.0</code></p>
+<figure>
+<img src="signalDecimated.svg" alt="Рис. 4: Сигнал с пониженной частотой дискретизации (децимацией)" /><figcaption>Рис. 4: Сигнал с пониженной частотой дискретизации (децимацией)</figcaption>
+</figure>
+<figure>
+<img src="spectrumDecimated.svg" alt="Рис. 5: Спектр сигнала с децимацией" /><figcaption>Рис. 5: Спектр сигнала с децимацией</figcaption>
+</figure>
+<h2 id="﫨-����-���">Повышение разрешения спектра</h2>
+<p>Дополним сингнал нулями. Для обеспечения \(L=4\) на 1 часть сигнала необходимо 3 части нулей:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1">signal <span class="fu">=</span> <span class="fu">map</span> function discrets <span class="fu">++</span> <span class="fu">replicate</span> (<span class="dv">3</span> <span class="fu">*</span> <span class="fu">floor</span> n) <span class="fl">0.0</span></a></code></pre></div>
+<figure>
+<img src="spectrumBetterResolution.svg" alt="Рис. 6: Спектр сигнала c улучшенным разрешением" /><figcaption>Рис. 6: Спектр сигнала c улучшенным разрешением</figcaption>
+</figure>
+<h2 id="袠���-�">Интерполяция сигнала</h2>
+<p>Операция дополнения нулями выглядит как</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1">signal' <span class="fu">=</span> <span class="fu">concatMap</span> (\x <span class="ot">-&gt;</span> x <span class="fu">:</span> <span class="fu">replicate</span> (l<span class="fu">-</span><span class="dv">1</span>) <span class="fl">0.0</span>) signal</a></code></pre></div>
+<figure>
+<img src="prepForInterpSignal.svg" alt="Рис. 7: Сигнал, где каждый отсчет дополнен нулями" /><figcaption>Рис. 7: Сигнал, где каждый отсчет дополнен нулями</figcaption>
+</figure>
+<p>Стром спектр сигнала, где каждый отсчет дополнен нулями.</p>
+<figure>
+<img src="prepForInterpSpectrum.svg" alt="Рис. 8: Спектр сигнала (рис. 7)" /><figcaption>Рис. 8: Спектр сигнала (рис. 7)</figcaption>
+</figure>
+<p>Спектр на рисунке 8 содержит высокочастотную компоненту, которая не удолетворяет условиям теоремы Котельникова и которая отразилась относительно частоты \(f_d/2\) в текущую область частот.</p>
+<p>Подавим данную частоту.</p>
+<figure>
+<img src="prepForInterpSpectrum2.svg" alt="Рис. 9: Спектр сигнала c подавленными верхними гармониками" /><figcaption>Рис. 9: Спектр сигнала c подавленными верхними гармониками</figcaption>
+</figure>
+<p>Из оставшегося спектра восстановим сигнал. Данный сигнал и будет интерполированным сигналом.</p>
+<figure>
+<img src="signalInterpolated.svg" alt="Рис. 10: Интерполированный сигнал" /><figcaption>Рис. 10: Интерполированный сигнал</figcaption>
+</figure>
+<h1 id="⫫">Выводы</h1>
+<p>В данной работе рассмотрены различные деформации дискретного сигнала.</p>
+    </section>
+</article>
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+    </body>
+</html>

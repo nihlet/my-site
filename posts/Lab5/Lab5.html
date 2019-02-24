@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>My Hakyll Blog - КИХ и БИХ фильтры 1-го и 2-го порядков (задание 5)</title>
+        <link rel="stylesheet" href="../../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <a href="../../">My Hakyll Blog</a>
+            </div>
+            <nav>
+                <a href="../../">Home</a>
+                <a href="../../about.html">About</a>
+                <a href="../../contact.html">Contact</a>
+                <a href="../../archive.html">Archive</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <h1>КИХ и БИХ фильтры 1-го и 2-го порядков (задание 5)</h1>
+            <article>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML" async></script>
+    </script>
+    <link rel="stylesheet" href="../../third-party/highlight/styles/default.css">
+    <script src="../../third-party/highlight/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <section class="header">
+        Опубликовано 2019-02-23<br>
+        
+        автор: Воронин Андрей
+        
+    </section>
+    <section>
+        <p>4 вариант.</p>
+<h1 id="�">Дано:</h1>
+<ul>
+<li>\(f_0=380\)</li>
+<li>\(f_v=19000\)</li>
+<li>\(A = 4\)</li>
+<li>\(r = 0.92\)</li>
+<li>\(f_c = 7000\)</li>
+</ul>
+<h1 id="�">Задание:</h1>
+<p>Задан сигнал с линейной частотной модуляцией. Реализовать его фильтрацию КИХ и БИХ фильтрами 1-го и 2-го порядков (черезпериодный вычитатель первого и второго порядков, рециркулятор, комплексный резонатор).</p>
+<h1 id="���-���-�">Этапы решения задания</h1>
+<h2 id="�-��-��-����">Определение КИХ и БИХ фильтров</h2>
+<p>Опрелелим период сигнала из частоты следования импульсов: <code>period = 1/f0</code></p>
+<p>Ниже представлена функция задающая сигнал с линейной частотной модуляцией (ЛЧМ), продискретезированный сигнал и расчет дискретов:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">chirp ::</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb1-2" title="2">chirp t <span class="fu">=</span> a <span class="fu">*</span> <span class="fu">cos</span>(<span class="dv">2</span> <span class="fu">*</span> <span class="fu">pi</span> <span class="fu">*</span> fv <span class="fu">/</span> (<span class="dv">2</span> <span class="fu">*</span> period) <span class="fu">*</span> t' <span class="fu">^^</span> <span class="dv">2</span>) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-3" title="3">    t' <span class="fu">=</span> t <span class="fu">-</span> period <span class="fu">*</span> <span class="fu">fromIntegral</span> (<span class="fu">floor</span> (t <span class="fu">/</span> period))</a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5">signal <span class="fu">=</span> <span class="fu">map</span> chirp discrets</a>
+<a class="sourceLine" id="cb1-6" title="6"></a>
+<a class="sourceLine" id="cb1-7" title="7">discrets <span class="fu">=</span> [<span class="fl">0.0</span>, <span class="dv">1</span><span class="fu">/</span>fd <span class="fu">..</span> <span class="dv">2</span> <span class="fu">*</span> period]</a></code></pre></div>
+<p>Функция построения сигнала:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1">plotSignal <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  toFile fopt <span class="st">&quot;posts/Lab5/signal.svg&quot;</span> <span class="fu">$</span>do</a>
+<a class="sourceLine" id="cb2-3" title="3">    setColors [opaque blue]</a>
+<a class="sourceLine" id="cb2-4" title="4">    plot (line <span class="st">&quot;&quot;</span> [<span class="fu">zip</span> discrets signal])</a></code></pre></div>
+<figure>
+<img src="signal.svg" alt="Рис. 1: Сигнал" /><figcaption>Рис. 1: Сигнал</figcaption>
+</figure>
+<p>В первую очередь необходимо определить функцию фильтрации сигнала при помощи БИХ фильтра:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="co">-- a, b список коэффициентов БИХ фильтра. Например фильтр 2 порядка: [a0,a1,a2] [b0,b1,b2]</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="co">-- xs отсчеты сигнала</span></a>
+<a class="sourceLine" id="cb3-3" title="3"><span class="ot">iir ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]</a>
+<a class="sourceLine" id="cb3-4" title="4">iir a b xs <span class="fu">=</span> helper xs zeros zeros <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  zeros <span class="fu">=</span> <span class="fu">replicate</span> rank <span class="dv">0</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  rank <span class="fu">=</span> <span class="fu">max</span> (<span class="fu">length</span> b) (<span class="fu">length</span> a)  <span class="co">-- - 1</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  helper [] _ _ <span class="fu">=</span> []  <span class="co">-- вспомогательная функция для прохода по всему сигналу</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  helper ns x_mem y_mem <span class="fu">=</span> next <span class="fu">:</span> helper (<span class="fu">tail</span> ns) x_mem' y_mem' <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-9" title="9">    next <span class="fu">=</span> <span class="fu">sum</span> (<span class="fu">zipWith</span> (<span class="fu">*</span>) b x_mem') <span class="fu">-</span> <span class="fu">sum</span> (<span class="fu">zipWith</span> (<span class="fu">*</span>) a <span class="fu">$</span> <span class="dv">0</span><span class="fu">:</span>y_mem)</a>
+<a class="sourceLine" id="cb3-10" title="10">    y_mem' <span class="fu">=</span> next <span class="fu">:</span> <span class="fu">init</span> y_mem </a>
+<a class="sourceLine" id="cb3-11" title="11">    x_mem' <span class="fu">=</span> <span class="fu">head</span> ns <span class="fu">:</span> <span class="fu">init</span> x_mem</a></code></pre></div>
+<p>В данной функции используется вспомогательная функция <code>helper</code> имеет рекурентный вызов и хранит два списка <code>y_mem</code>, <code>x_mem</code> для записи предидущих значений</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1">y_mem' <span class="fu">=</span> next <span class="fu">:</span> <span class="fu">init</span> y_mem </a>
+<a class="sourceLine" id="cb4-2" title="2">x_mem' <span class="fu">=</span> <span class="fu">head</span> ns <span class="fu">:</span> <span class="fu">init</span> x_mem</a></code></pre></div>
+<p>Рассчет следующего элемента фильтрации происходит в выражении:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1">next <span class="fu">=</span> <span class="fu">sum</span> (<span class="fu">zipWith</span> (<span class="fu">*</span>) b x_mem') <span class="fu">-</span> <span class="fu">sum</span> (<span class="fu">zipWith</span> (<span class="fu">*</span>) a <span class="fu">$</span> <span class="dv">0</span><span class="fu">:</span>y_mem)</a></code></pre></div>
+<p>КИХ фильтр в свою очередь выводится из функции БИХ фильтра:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="co">-- КИХ фильтр как частный случай БИХ фильтра</span></a>
+<a class="sourceLine" id="cb6-2" title="2">fir <span class="fu">=</span> iir []</a></code></pre></div>
+<h2 id="����-�����">Черезпериодный вычитатель</h2>
+<p>Черезпериодный вычитатель 1 порядка задается как функция <code>[Double] -&gt; [Double]</code> и выводится из общей функции КИХ фильтра с коэффинциентами <code>[-1,1]</code>, которые эквивалентны выражению \(H(z) = -z^{-1} + 1\)</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1">fir1 <span class="fu">=</span> fir [<span class="fu">-</span><span class="dv">1</span>, <span class="dv">1</span>]</a></code></pre></div>
+<figure>
+<img src="signal_fir1.svg" alt="Рис. 2: КИХ фильтр: Черезпериодный вычитатель 1 порядка" /><figcaption>Рис. 2: КИХ фильтр: Черезпериодный вычитатель 1 порядка</figcaption>
+</figure>
+<p>Черезпериодный вычитатель 1 порядка - КИХ фильтр с коэффинциентами <code>[0.5, -1, 0.5]</code>, которые эквивалентны выражению \( H(z) = 0.5 z^{-2} -z^{-1} + 0.5\)</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1">fir2 <span class="fu">=</span> fir [<span class="fl">0.5</span>, <span class="fu">-</span><span class="dv">1</span>, <span class="fl">0.5</span>]</a></code></pre></div>
+<figure>
+<img src="signal_fir2.svg" alt="Рис. 3: КИХ фильтр: Черезпериодный вычитатель 2 порядка" /><figcaption>Рис. 3: КИХ фильтр: Черезпериодный вычитатель 2 порядка</figcaption>
+</figure>
+<p>Черезпериодный вычитатель предназначен для фильтрации (подавления) неподвижного фона относительно быстрых подвижных целей. Фильтр 2 порядка подавляет постоянную составляющую заметно сильнее.</p>
+<h2 id="�������">Рециркулятор</h2>
+<p>Рециркулятор задается выражением:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1">iir1 <span class="fu">=</span> iir [<span class="dv">1</span>, <span class="fu">-</span>r] [<span class="dv">1</span>]</a></code></pre></div>
+<p>Что эквивалентно дроби: \[ H(z) = \frac{1}{1-r\cdot z^{-1}}\].</p>
+<figure>
+<img src="signal_iir1.svg" alt="Рис. 4: БИХ фильтр: Рециркулятор" /><figcaption>Рис. 4: БИХ фильтр: Рециркулятор</figcaption>
+</figure>
+<p>Такой фильтр можно использовать для выделения медленных сигналов, наблюдаемых на фоне высокочастотных помех. В радиолокации такой фильтр, называемый рециркулятором, используется для последетекторного накопления отсчетов.</p>
+<h2 id="ꡫ-���">Комплексный резонатор</h2>
+<p>Комплексный резонатор выражением</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1">iir2 <span class="fu">=</span> iir [<span class="dv">0</span>,<span class="fu">-</span>k] [<span class="dv">1</span>] <span class="kw">where</span></a>
+<a class="sourceLine" id="cb10-2" title="2">  k <span class="fu">=</span> (r <span class="fu">:+</span> <span class="dv">0</span>) <span class="fu">*</span> <span class="fu">exp</span> (j <span class="fu">*</span> <span class="fu">pi</span> <span class="fu">*</span> ((fc <span class="fu">/</span> (fd<span class="fu">/</span><span class="dv">2</span>) ) <span class="fu">:+</span> <span class="dv">0</span>))</a></code></pre></div>
+<p>Эквивалентная дробь: \[ H(z) = \frac{1}{1-r \cdot e^{j\omega_0}\cdot z^{-1}}\].</p>
+<p>Комплексный резонатор эквивалентен колебательному контуру. Построим АЧХ резонатора.</p>
+<figure>
+<img src="signal_iir2_transfer.svg" alt="Рис. 5: АЧХ компексного резонатора" /><figcaption>Рис. 5: АЧХ компексного резонатора</figcaption>
+</figure>
+<p>На рисунке 6 пердставлен результат фильтрации ЛЧМ сигнала при помощи комплексного резонатора. Красной точкой отмечен момент времени, когда на вход фильтра поступает сигнал с частотой \(f_c =7000\) Гц.</p>
+<figure>
+<img src="signal_iir2.svg" alt="Рис. 6: БИХ фильтр: Комплексный резонатор" /><figcaption>Рис. 6: БИХ фильтр: Комплексный резонатор</figcaption>
+</figure>
+<p>Как видно максимум входного сигнала находится чуть позже, чем момент поступления на вход частоты 7000 Гц. Это происходит из-за слишком быстрого нарастания частоты ЛЧМ сигнала.</p>
+<p>Ниже приведен пример, где фильтруется сигнал при с увеличенным периодом в 20 раз использовании того же фильтра. Максимум отфильтрованного сигнала совпадает с частотой настройки фильтра 7000 Гц.</p>
+<figure>
+<img src="signal_iir2_slow.svg" alt="Рис. 7: БИХ фильтр: Комплексный резонатор" /><figcaption>Рис. 7: БИХ фильтр: Комплексный резонатор</figcaption>
+</figure>
+<p>Комплексный резонатор реализует когерентное (т.е. с компенсацией фазового сдвига) накопление отсчетов комплексного входного сигнала.</p>
+<h1 id="⫫">Выводы</h1>
+<p>В данной работе были созданы функции для генерации КИХ и БИХ фильтров общего вида. Кроме того были построены несколько простых фильтров. Данными фильтрами была проведена фильтрация ЛЧМ сигнала с ожидаемыми результатами.</p>
+    </section>
+</article>
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+    </body>
+</html>

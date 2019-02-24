@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>My Hakyll Blog - Прямое и обратное Фурье-преобразования периодического сигнала (задание 2)</title>
+        <link rel="stylesheet" href="../../css/default.css" />
+    </head>
+    <body>
+        <header>
+            <div class="logo">
+                <a href="../../">My Hakyll Blog</a>
+            </div>
+            <nav>
+                <a href="../../">Home</a>
+                <a href="../../about.html">About</a>
+                <a href="../../contact.html">Contact</a>
+                <a href="../../archive.html">Archive</a>
+            </nav>
+        </header>
+
+        <main role="main">
+            <h1>Прямое и обратное Фурье-преобразования периодического сигнала (задание 2)</h1>
+            <article>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML" async></script>
+    </script>
+    <link rel="stylesheet" href="../../third-party/highlight/styles/default.css">
+    <script src="../../third-party/highlight/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <section class="header">
+        Опубликовано 2019-01-27<br>
+        
+        автор: Воронин Андрей
+        
+    </section>
+    <section>
+        <p>4 вариант.</p>
+<h1 id="�">Дано:</h1>
+<ul>
+<li>периодический сигнал (меандр) амплитудой 1 В;</li>
+<li>частота \(f_0 = 1400\) Гц;</li>
+<li>частота дискретизации \(f_d = K \cdot f_0 \), \(K=[0.2; 1.6; 8] \);</li>
+<li>количество гармоник \(M = [2, 5, 12]\);</li>
+<li>количество точек \(N = 1024\);</li>
+<li>сигнал содержит 10 периодов</li>
+</ul>
+<h1 id="�">Задание:</h1>
+<p>Разложить сигнал в ряд Фурье, построить амплитудную и фазовую спектрограммы, Для каждого из 3-х заданных чисел гармоник M совершить обратное преобразование Фурье. Определить номер наивысшей гармоники, существенной для восстановления сигнала (уровень 0,1), и восстановить сигнал для гармоник, ограниченных найденной частотой. Для всех случаев вычислить ошибку восстановления (среднее квадратическое отклонение между точным и приближенным значениями).</p>
+<h1 id="���-���-�">Этапы решения задания</h1>
+<h2 id="�-���-��-�">Построение спектра изначального сигнала</h2>
+<p>Изначальная последовательность задается выражением:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">function ::</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span></a>
+<a class="sourceLine" id="cb1-2" title="2">function t <span class="fu">=</span> <span class="fu">fromInteger</span> <span class="fu">$</span> (<span class="fu">-</span><span class="dv">1</span>) <span class="fu">^</span> i</a>
+<a class="sourceLine" id="cb1-3" title="3">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-4" title="4">    i <span class="fu">=</span> <span class="fu">floor</span> (t <span class="fu">*</span> f0 <span class="fu">*</span> <span class="dv">2</span>)</a></code></pre></div>
+<p>Функция построения графика выглядит следующим образом:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1">plotOriginal <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-2" title="2">  toFile fopt <span class="st">&quot;posts/Lab2/Original_signal.svg&quot;</span> <span class="fu">$</span>do</a>
+<a class="sourceLine" id="cb2-3" title="3">    layout_title <span class="fu">.=</span> <span class="st">&quot;Original signal&quot;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">    setColors [opaque blue]</a>
+<a class="sourceLine" id="cb2-5" title="5">    plot (line <span class="st">&quot;&quot;</span> [<span class="fu">zip</span> discrets signal]) <span class="kw">where</span></a>
+<a class="sourceLine" id="cb2-6" title="6">      discrets <span class="fu">=</span> [<span class="fl">0.0</span>, <span class="fl">1.0</span><span class="fu">/</span>fd <span class="fu">..</span> (n<span class="fu">-</span><span class="dv">1</span>)<span class="fu">/</span>fd]</a>
+<a class="sourceLine" id="cb2-7" title="7">      signal <span class="fu">=</span> <span class="fu">map</span> function discrets</a>
+<a class="sourceLine" id="cb2-8" title="8">      fd <span class="fu">=</span> n <span class="fu">/</span> (periods <span class="fu">*</span> period)</a></code></pre></div>
+<p>где частота дискретизации <code>fd</code> подобрана таким образом, чтобы 10 периодов исходного сигнала соответствовали 1024 отсчетам</p>
+<figure>
+<img src="Original_signal.svg" alt="Рис. 1: Исходный сигнал" /><figcaption>Рис. 1: Исходный сигнал</figcaption>
+</figure>
+<p>Амплитудный и фазовый спектр можно найти с помощью следующих двух функций:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1">ampSpectrum signal <span class="fu">=</span> <span class="fu">map</span> magnitude <span class="fu">$</span> elems <span class="fu">$</span> rfft <span class="fu">$</span> listArray (<span class="dv">0</span>, n<span class="fu">-</span><span class="dv">1</span>) signal <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  n <span class="fu">=</span> <span class="fu">length</span> signal</a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4">phaseSpectrum signal <span class="fu">=</span> <span class="fu">map</span> phase <span class="fu">$</span> elems <span class="fu">$</span> rfft <span class="fu">$</span> listArray (<span class="dv">0</span>, n<span class="fu">-</span><span class="dv">1</span>) signal <span class="kw">where</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    n <span class="fu">=</span> <span class="fu">length</span> signal</a></code></pre></div>
+<p><img src="Original_spectrum.svg" alt="Рис. 2: Амплитудный спектр исходного сигнала" /> На рисунке 2 наблюдается характерная картина для сигнала типа меандр: присутствуют только нечетные гармоники.</p>
+<figure>
+<img src="Original_phase_spectrum.svg" alt="Рис. 3: Фазовый спектр исходного сигнала" /><figcaption>Рис. 3: Фазовый спектр исходного сигнала</figcaption>
+</figure>
+<p>Функция которая восстанавливает сигнал по заданному количеству гармоник</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1">signalFromHarmonics k signal <span class="fu">=</span> <span class="fu">map</span> ((<span class="fu">*</span><span class="dv">2</span>) <span class="fu">.</span> realPart) <span class="fu">$</span> elems <span class="fu">$</span> ifft harmonics <span class="kw">where</span></a>
+<a class="sourceLine" id="cb4-2" title="2">  spectrum <span class="fu">=</span> rfft <span class="fu">$</span> listArray (<span class="dv">0</span>, n<span class="fu">-</span><span class="dv">1</span>) signal</a>
+<a class="sourceLine" id="cb4-3" title="3">  harmonics <span class="fu">=</span> listArray (<span class="dv">0</span>, n<span class="fu">-</span><span class="dv">1</span>) <span class="fu">$</span> <span class="fu">take</span> k (elems spectrum) <span class="fu">++</span> <span class="fu">replicate</span> (n <span class="fu">-</span> k) (<span class="fl">0.0</span> <span class="fu">:+</span> <span class="fl">0.0</span>)</a>
+<a class="sourceLine" id="cb4-4" title="4">  n <span class="fu">=</span> <span class="fu">length</span> signal</a></code></pre></div>
+<p>где <code>k</code> это количество гармоник дискретного преобразования Фурье. \[f_k = \frac{k}{T}\] где \(T\) период времени, в течение которого брались входные данные.</p>
+<p>Для рассчета величины ошибки используется функция:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1">calculateError s1 s2 <span class="fu">=</span> <span class="fu">sqrt</span> <span class="fu">$</span> (<span class="fu">/</span>n) <span class="fu">$</span> <span class="fu">sum</span> <span class="fu">$</span> <span class="fu">map</span> (<span class="fu">^^</span><span class="dv">2</span>) <span class="fu">$</span> <span class="fu">zipWith</span> (<span class="fu">-</span>) s1 s2 <span class="kw">where</span> </a>
+<a class="sourceLine" id="cb5-2" title="2">  n <span class="fu">=</span> <span class="fu">fromIntegral</span> <span class="fu">$</span> <span class="fu">length</span> s1</a></code></pre></div>
+<figure>
+<img src="Original_signal_ifft_1.svg" alt="Рис. 4: Восстановленный сигнал по 2 гармоникам" /><figcaption>Рис. 4: Восстановленный сигнал по 2 гармоникам</figcaption>
+</figure>
+<p>Так как спектр меандра не имеет четных частот, на рисунке 2 можно увидеть восстановленный сигнал в виде одной гармоники. Гармоника под номером 2 равна 0.</p>
+<figure>
+<img src="Original_signal_ifft_2.svg" alt="Рис. 5: Восстановленный сигнал по 5 гармоникам" /><figcaption>Рис. 5: Восстановленный сигнал по 5 гармоникам</figcaption>
+</figure>
+<p>Аналогично рисунку 4, сигнал восстановленный по 5 гармоникам имеет форму суммы трех гармоник. Нулевыми гармониками являются 2 и 4</p>
+<figure>
+<img src="Original_signal_ifft_3.svg" alt="Рис. 6: Восстановленный сигнал по 12 гармоникам" /><figcaption>Рис. 6: Восстановленный сигнал по 12 гармоникам</figcaption>
+</figure>
+<p>Аналогичная ситуация на рисунке 6.</p>
+<p>Для поиска количества гармоник необходимого, чтобы обеспечить ошибку восстановления меньшую, чем <code>0.1</code> используется рекурентная функция</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="ot">findMaxHarmonic01 ::</span> [<span class="dt">Double</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb6-2" title="2">findMaxHarmonic01 <span class="fu">=</span> helper <span class="dv">0</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  helper h s1 <span class="fu">=</span> </a>
+<a class="sourceLine" id="cb6-4" title="4">    <span class="kw">if</span> calculateError s1 s2 <span class="fu">&lt;</span> <span class="fl">0.1</span></a>
+<a class="sourceLine" id="cb6-5" title="5">    <span class="kw">then</span> h</a>
+<a class="sourceLine" id="cb6-6" title="6">    <span class="kw">else</span> helper (h<span class="fu">+</span><span class="dv">1</span>) s1</a>
+<a class="sourceLine" id="cb6-7" title="7">    <span class="kw">where</span> s2 <span class="fu">=</span> signalFromHarmonics h s1</a></code></pre></div>
+<figure>
+<img src="Original_signal_ifft_max.svg" alt="Рис. 7 Восстановленный сигнал с среднеквадратической ошибкой меньше 0.1" /><figcaption>Рис. 7 Восстановленный сигнал с среднеквадратической ошибкой меньше 0.1</figcaption>
+</figure>
+<p>Как видно из рисунка 7 - 30 гармоник достаточно, для восстановления сигнала с заданной точностью.</p>
+<h2 id="䡠���-�-�-k-0.2">Дискретизация сигнала при \(K = 0.2\)</h2>
+<p>Найдем частоту дискретизации сигнала</p>
+<p>\[fd = K \cdot f0 = 0.2 \cdot 1400 \text{ Гц} = 280 \text{ Гц} \]</p>
+<p>Проведем операцию дискретизации сигнала</p>
+<figure>
+<img src="undersamling_signal1.svg" alt="Рис. 8: Продискретизированный сигнал \(K = 0.2\)" /><figcaption>Рис. 8: Продискретизированный сигнал \(K = 0.2\)</figcaption>
+</figure>
+<p>На рисунке 4 представлен график, который содержит более 1000 периодов оригинального сигнала, однако в следствие низкой частоты дискретизации проявляется стробоскопический эффект. В результате на графике представлен лишь один переход сигнала c 1 на -1.</p>
+<figure>
+<img src="undersamling_spectrum1.svg" alt="Рис. 9: Амплитудный спектр сигнала \(K = 0.2\)" /><figcaption>Рис. 9: Амплитудный спектр сигнала \(K = 0.2\)</figcaption>
+</figure>
+<p>Спектр данного сигнала повторяет спектр одиночного прямоугольного импульса.</p>
+<figure>
+<img src="undersamling_phase_spectrum1.svg" alt="Рис. 10: Фазовый спектр сигнала \(K = 0.2\)" /><figcaption>Рис. 10: Фазовый спектр сигнала \(K = 0.2\)</figcaption>
+</figure>
+<h2 id="䡠���-�-�-k-1.6">Дискретизация сигнала при \(K = 1.6\)</h2>
+<p>Найдем частоту дискретизации сигнала</p>
+<p>\[fd = K \cdot f0 = 1.6 \cdot 1400 \text{ Гц} = 2240 \text{ Гц} \]</p>
+<p>Проведем операцию дискретизации сигнала</p>
+<figure>
+<img src="undersamling_signal2.svg" alt="Рис. 11: Продискретизированный сигнал \(K = 1.6\)" /><figcaption>Рис. 11: Продискретизированный сигнал \(K = 1.6\)</figcaption>
+</figure>
+<figure>
+<img src="undersamling_spectrum2.svg" alt="Рис. 12: Амплитудный спектр сигнала \(K = 1.6\)" /><figcaption>Рис. 12: Амплитудный спектр сигнала \(K = 1.6\)</figcaption>
+</figure>
+<figure>
+<img src="undersamling_phase_spectrum2.svg" alt="Рис. 13: Фазовый спектр сигнала \(K = 1.6\)" /><figcaption>Рис. 13: Фазовый спектр сигнала \(K = 1.6\)</figcaption>
+</figure>
+<p>На рисунке 11 также представлен сигнал с недостаточной дискретизацией.</p>
+<h2 id="䡠���-�-�-k-8">Дискретизация сигнала при \(K = 8\)</h2>
+<p>Найдем частоту дискретизации сигнала</p>
+<p>\[fd = K \cdot f0 = 8 \cdot 1400 \text{ Гц} = 11200 \text{ Гц} \]</p>
+<p>Проведем операцию дискретизации сигнала.</p>
+<figure>
+<img src="oversamling_signal.svg" alt="Рис. 14: Продискретизированный сигнал \(K = 8\)" /><figcaption>Рис. 14: Продискретизированный сигнал \(K = 8\)</figcaption>
+</figure>
+<figure>
+<img src="oversamling_spectrum.svg" alt="Рис. 15: Амплитудный спектр сигнала \(K = 8\)" /><figcaption>Рис. 15: Амплитудный спектр сигнала \(K = 8\)</figcaption>
+</figure>
+<figure>
+<img src="oversamling_phase_spectrum.svg" alt="Рис. 16: Фазовый спектр сигнала \(K = 8\)" /><figcaption>Рис. 16: Фазовый спектр сигнала \(K = 8\)</figcaption>
+</figure>
+<p>В данном случае частота дискретизации достаточна для построения корректного спектра сигнала. На рисунке 15 представлены первая и третья гарморики меандра.</p>
+<h1 id="⫫">Выводы</h1>
+<p>Частота дискретизации явным образом влияет на форму дискретного сигнала, а также его спектра. Для корректного представления аналогового сигнала явно недостаточными являются частоты \(0.8 \cdot f_0\) и \(1.6 \cdot f_0\). Однако частота дискретизации \(8 \cdot f_0\) позволяет получить визуально достаточно похожий на меандр сигнал, так как большая часть энергии сигнала расположена в окрестности первой гармоники.</p>
+<p>Задаваясь количественным критерием схожести восстановленного сигнала и оригинального в виде средней квадратичной ошибки был проведен расчет представленный на рисунках 4-7. Критерием схожести является величина равная \(0.1\).</p>
+<p>Выяснилось что для качественного восстановления сигнала необходимо \(30\) гармоник. Другими словами частота дискретизации должна быть не менее \(30 \cdot f_0 = 30 \cdot 1400 = 42000\).</p>
+    </section>
+</article>
+        </main>
+
+        <footer>
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </footer>
+    </body>
+</html>
